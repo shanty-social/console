@@ -1,8 +1,8 @@
-FROM arm64v8/alpine:3 AS python
+FROM ${ARCH}alpine:3 AS python
 
 # Add the python application.
 ADD ./back /app
-ADD ./docker/entrypoint-app.sh /entrypoint.sh
+ADD ./scripts/entrypoint-app.sh /entrypoint.sh
 
 # Install Python
 WORKDIR /app
@@ -16,7 +16,7 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 
 FROM python AS node
 
-ADD ./docker/entrypoint-vue.sh /entrypoint.sh
+ADD ./scripts/entrypoint-vue.sh /entrypoint.sh
 ADD ./front /front
 
 # Install Node
