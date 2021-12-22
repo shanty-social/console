@@ -1,0 +1,41 @@
+version: "3.4"
+
+volumes:
+  db:
+
+services:
+ 
+  back:
+    image: back
+    build:
+      dockerfile: ./docker/Dockerfile
+      target: python
+      context: ./
+    volumes:
+      - ./back:/app:ro
+      - ./docker/entrypoint-app.sh:/entrypoint.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - db:/var/tmp/
+    environment:
+      - FLASK_LOG_LEVEL=DEBUG
+      - FLASK_DEBUG=true
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=8000
+      - FLASK_DB_PATH=/var/tmp/db.sqlite3
+
+  front:
+    image: back
+    build:
+      dockerfile: ./docker/Dockerfile
+      target: node
+      context: ./
+    volumes:
+      - ./front:/front:ro
+      - ./docker/entrypoint-vue.sh:/entrypoint.sh:ro
+    ports:
+      - 8000:8000
+    environment:
+      - FLASK_HOST=back
+      - FLASK_PORT=8000
+      - VUE_HOST=0.0.0.0
+      - VUE_PORT=8000
