@@ -1,4 +1,4 @@
-.venv: Pipfile sysdeps
+.venv: Pipfile
 	PIPENV_VENV_IN_PROJECT=true pipenv install
 	touch .venv
 
