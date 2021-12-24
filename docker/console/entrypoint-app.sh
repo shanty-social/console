@@ -1,5 +1,5 @@
 #!/bin/sh
 
-cd /
+cd /app
 
-python3 -m app
+python3 -m api

@@ -9,10 +9,11 @@ flask-socketio = "*"
 stopit = "*"
 docker-py = "*"
 upnpy = "*"
-simple-websocket = "*"
 flask-sqlalchemy = "*"
 
 [dev-packages]
+flake8 = "*"
+pytest = "*"
 
 [requires]
 python_version = "3"

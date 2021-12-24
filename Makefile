@@ -8,7 +8,18 @@ build:
 
 .PHONY: test
 test:
-	${DOCKER_COMPOSE} run console python3 manage.py test --noinput
+	${MAKE} -C back test
+	${MAKE} -C front test
+
+
+.PHONY: lint
+lint:
+	${MAKE} -C back lint
+	${MAKE} -C front lint
+
+
+.PHONY: ci
+ci: test lint
 
 
 .PHONY: migrate
