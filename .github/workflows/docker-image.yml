@@ -39,6 +39,13 @@ jobs:
         run: |
           docker buildx build -f docker/console/Dockerfile \
             --push \
-            --tag latest \
+            --tag ${{secrets.DOCKER_USER}}/console:latest \
             --tag ${{secrets.DOCKER_USER}}/console:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD_ }}
+          repository: shantysocial/console
