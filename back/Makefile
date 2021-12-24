@@ -1,6 +1,7 @@
-.venv: Pipfile
+.venv: Pipfile sysdeps
 	PIPENV_VENV_IN_PROJECT=true pipenv install
 	touch .venv
+
 
 .PHONY: deps
 deps: .venv
