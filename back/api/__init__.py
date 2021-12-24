@@ -1,14 +1,15 @@
 import os
 import logging
 
-from flask import Flask, send_from_directory
+from flask import Flask
 from flask_socketio import SocketIO
 
-from .models import db, Setting
+from .models import db
 from .views import root
 
 
-LOG_LEVEL = logging.getLevelName(os.environ.get('FLASK_LOG_LEVEL', 'ERROR').upper())
+LOG_LEVEL = logging.getLevelName(
+    os.environ.get('FLASK_LOG_LEVEL', 'ERROR').upper())
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(LOG_LEVEL)

@@ -1,5 +1,5 @@
 import os
-from . import app
+from . import app, socketio
 
 
 HOST = os.environ.get('FLASK_HOST', '0.0.0.0')
