@@ -8,7 +8,7 @@ services:
   back:
     image: back
     build:
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./docker/console/Dockerfile
       target: python
       context: ./
     volumes:
@@ -26,7 +26,7 @@ services:
   front:
     image: back
     build:
-      dockerfile: ./docker/Dockerfile
+      dockerfile: ./docker/console/Dockerfile
       target: node
       context: ./
     volumes:
