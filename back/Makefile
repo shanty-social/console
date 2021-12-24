@@ -1,5 +1,5 @@
 .venv: Pipfile
-	PIPENV_VENV_IN_PROJECT=true pipenv install
+	PIPENV_VENV_IN_PROJECT=true pipenv install --dev
 	touch .venv
 
 
