@@ -1,3 +1,4 @@
+DOCKER=docker
 DOCKER_COMPOSE = docker-compose
 
 
@@ -30,3 +31,11 @@ migrate:
 .PHONY: run
 run:
 	${DOCKER_COMPOSE} up
+
+
+.PHONY: tarball
+tarball:
+	${DOCKER} build . -f docker/tarball/Dockerfile -t tarball
+	${DOCKER} run --privileged -ti \
+			  -e OUTPUT=/output/var-lib-docker.tgz \
+			  -v ${PWD}/output:/output tarball
