@@ -1,7 +1,8 @@
 FROM ${ARCH}alpine:3 AS python
 
-# Add the python application.
-ADD ./back /app
+# Add the python application, be sure to exclude dotfiles.
+ADD ./back/api /app/
+ADD ./back/Pipfile* /app/
 ADD ./docker/console/entrypoint-app.sh /entrypoint.sh
 
 # Install Python
