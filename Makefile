@@ -36,6 +36,7 @@ run:
 .PHONY: tarball
 tarball:
 	${DOCKER} build . -f docker/tarball/Dockerfile -t tarball
-	${DOCKER} run --privileged \
+	${DOCKER} run --privileged --rm \
 			  -e OUTPUT=/output/var-lib-docker.tgz \
+			  -v $(mktemp -d):/var/lib/docker \
 			  -v ${PWD}/output:/output tarball

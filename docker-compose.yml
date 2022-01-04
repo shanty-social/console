@@ -1,10 +1,30 @@
-version: "3.4"
+version: "3.7"
 
 volumes:
   db:
+  run:
 
 services:
- 
+
+  net:
+    image: net
+    build:
+      dockerfile: ./docker/net/Dockerfile
+      context: ./
+    privileged: true
+    network_mode: host
+    volumes:
+      - run:/var/run
+      - ./docker/net/entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/net/wpa_supplicant.conf:/etc/wpa_supplicant/wpa_supplicant.conf
+    environment:
+      - INTERFACE=wlx1cbfce6bc882
+      - APD_SSID=shanty-pi
+      - APD_PASSPHRASE=foobar802.11
+      - APD_CHANNEL=6
+      - ADDRESS=192.168.102.254
+      - DHCP_RANGE=192.168.102.100,192.168.102.150,1h
+
   back:
     image: back
     build:
@@ -13,9 +33,10 @@ services:
       context: ./
     volumes:
       - ./back:/app:ro
-      - ./docker/entrypoint-app.sh:/entrypoint.sh:ro
+      - ./docker/console/entrypoint-app.sh:/entrypoint.sh:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - db:/var/tmp/
+      - run:/var/run/
     environment:
       - FLASK_LOG_LEVEL=DEBUG
       - FLASK_DEBUG=true
@@ -31,7 +52,7 @@ services:
       context: ./
     volumes:
       - ./front:/front:ro
-      - ./docker/entrypoint-vue.sh:/entrypoint.sh:ro
+      - ./docker/console/entrypoint-vue.sh:/entrypoint.sh:ro
     ports:
       - 8000:8000
     environment:

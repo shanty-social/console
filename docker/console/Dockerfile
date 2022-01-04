@@ -1,4 +1,4 @@
-FROM ${ARCH}alpine:3 AS python
+FROM ${ARCH}alpine:3.15 AS python
 
 # Add the python application, be sure to exclude dotfiles.
 ADD ./back/api /app/
@@ -36,5 +36,7 @@ FROM python AS final
 # Copy vue static files.
 COPY --from=build /front/dist/static /app/static
 COPY --from=build /front/dist/index.html /app/templates/
+
+USER nobody
 
 WORKDIR /app
