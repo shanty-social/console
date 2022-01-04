@@ -2,7 +2,7 @@ version: "3.7"
 
 volumes:
   db:
-  run:
+  wpa_ctrl:
 
 services:
 
@@ -14,14 +14,11 @@ services:
     privileged: true
     network_mode: host
     volumes:
-      - run:/var/run
+      - wpa_ctrl:/var/run/wpa_supplicant
       - ./docker/net/entrypoint.sh:/entrypoint.sh:ro
       - ./docker/net/wpa_supplicant.conf:/etc/wpa_supplicant/wpa_supplicant.conf
     environment:
       - INTERFACE=wlx1cbfce6bc882
-      - APD_SSID=shanty-pi
-      - APD_PASSPHRASE=foobar802.11
-      - APD_CHANNEL=6
       - ADDRESS=192.168.102.254
       - DHCP_RANGE=192.168.102.100,192.168.102.150,1h
 
@@ -36,8 +33,9 @@ services:
       - ./docker/console/entrypoint-app.sh:/entrypoint.sh:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - db:/var/tmp/
-      - run:/var/run/
+      - wpa_ctrl:/var/run/wpa_supplicant
     environment:
+      - WPA_SUPPLICANT_CONTROL=/var/run/wpa_supplicant
       - FLASK_LOG_LEVEL=DEBUG
       - FLASK_DEBUG=true
       - FLASK_HOST=0.0.0.0
