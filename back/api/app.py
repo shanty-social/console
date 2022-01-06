@@ -27,7 +27,16 @@ app.add_url_rule('/', view_func=root)
 
 
 def create_tables():
+    "Create database tables."
     from api.models import (
         Setting, Task, TaskLog,
     )
     db.database.create_tables([Setting, Task, TaskLog], safe=True)
+
+
+def drop_tables():
+    "Drop database tables (used between tests)."
+    from api.models import (
+        Setting, Task, TaskLog,
+    )
+    db.database.drop_tables([Setting, Task, TaskLog], safe=True)

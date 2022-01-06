@@ -28,11 +28,12 @@ class UpperCharField(CharField):
 
 class Setting(db.Model):
     "Store settings"
+    group = CharField(null=True)
     name = UpperCharField(unique=True)
     value = PickleField(null=False)
 
     def __unicode__(self):
-        return f'{self.name}={self.value}'
+        return f'<Setting {self.group}[{self.name}]={self.value}>'
 
 
 class Task(db.Model):
@@ -45,6 +46,10 @@ class Task(db.Model):
     created = DateTimeField(default=datetime.now)
     completed = DateTimeField(default=None, null=True)
     tail = DeferredForeignKey('TaskLog', backref='tail_of', null=True)
+
+    def __unicode__(self):
+        return f'<Task {self.function.__name__}, args={self.args}, ' \
+               f'kwargs={self.kwargs}>'
 
     def get_result(self):
         # Get a fresh instance:
@@ -89,3 +94,6 @@ class TaskLog(db.Model):
     task = ForeignKeyField(Task, backref='log')
     created = DateTimeField(default=datetime.now)
     message = CharField()
+
+    def __unicode__(self):
+        return f'<TaskLog {self.message}>'

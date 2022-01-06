@@ -1,25 +1,10 @@
-import os
 import time
-import tempfile
 import logging
-import atexit
 
 import pytest
 
-from api import config
-
-DBFD, DBPATH = tempfile.mkstemp()
-#os.remove(DBPATH)
-atexit.register(os.remove, DBPATH)
-os.close(DBFD)
-
-# Settings under test.
-config.DATABASE['name'] = DBPATH
-config.TESTING = True
-
 from api import tasks
 from api.tasks import CancelledError, TimeoutException
-from api.app import app, create_tables
 
 
 LOGGER = logging.getLogger()
@@ -30,10 +15,12 @@ _CRON_TEST = {}
 
 
 def _cron_test(*args, **kwargs):
+    "A task that has a side-effect our test can detect."
     _CRON_TEST['A'] = 'I ran'
 
 
 def _task_test(A, B, C=None):
+    "A task that can sleep and does some math."
     if C:
         # Hard sleep prevent cancellation & timeout.
         start = time.time()
@@ -43,26 +30,19 @@ def _task_test(A, B, C=None):
 
 
 def _task_log_test(A):
+    "A generator task that emits log messages."
     for i in range(A):
         yield f'Log message: {i}'
     return A + 3
 
 
-@pytest.fixture
-def client():
-    create_tables()
-
-    with app.test_client() as client:
-        yield client
-
-
-def test_task_wait(client):
+def test_task_wait():
     "Ensure you can wait for a task result."
     t = tasks.defer(_task_test, args=(1, 2))
     assert t.wait() == 3
 
 
-def test_task_cancel(client):
+def test_task_cancel():
     "Ensure a task can be cancelled."
     t = tasks.defer(_task_test, args=(1, 3), kwargs={'C': 5.0})
     t.cancel()
@@ -70,7 +50,7 @@ def test_task_cancel(client):
         t.wait()
 
 
-def test_task_timeout(client):
+def test_task_timeout():
     "Ensure a task can timeout."
     t = tasks.defer(_task_test, args=(1, 3), kwargs={'C': 5.0}, timeout=1.0)
     with pytest.raises(TimeoutException):
@@ -88,6 +68,7 @@ def test_task_log(client):
 
 
 def test_cron(client):
+    "Test task scheduling."
     tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
     assert len(tasks.CRONTAB) == 1, 'Crontab did not schedule'
     tasks.start_scheduler(interval=0.1)
