@@ -2,8 +2,10 @@ import threading
 import inspect
 import logging
 
+from functools import wraps
 from datetime import datetime
 
+import pycron
 from stopit import threading_timeoutable, TimeoutException
 
 from api.app import db, app
@@ -12,6 +14,9 @@ from api.models import Task, TaskLog
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+CRON = None
+CRONTAB = []
 
 
 class CancelledError(Exception):
@@ -72,8 +77,38 @@ def _task_runner(task):
         .where(Task.id==task.id)).execute()
 
 
-def defer(f, *args, **kwargs):
-    timeout = kwargs.pop('timeout', None)
+def cron(schedule, *args, **kwargs):
+    "Decorate a function to define a run schedule and arguments."
+    def inner(f):
+        CRONTAB.append((schedule, f, args, kwargs))
+    return inner
+
+
+def start_scheduler(interval=60.0):
+    "Start a scheduler to run schedule cron tasks."
+    global CRON
+
+    def _scheduler():
+        LOGGER.debug('Scheduler checking %i schedules', len(CRONTAB))
+        for schedule, f, args, kwargs in CRONTAB:
+            if pycron.is_now(schedule):
+                LOGGER.debug(
+                    'Schedule %s is now, executing task %s', schedule, f)
+                defer(f, args, kwargs)
+
+    CRON = threading.Timer(interval, _scheduler)
+    CRON.start()
+
+
+def stop_scheduler():
+    "Terminate the scheduler."
+    global CRON
+    CRON.cancel()
+    CRON = None
+
+
+def defer(f, args=(), kwargs={}, timeout=None):
+    "Defer a function to run as a task."
     task = Task(function=f, args=args, kwargs=kwargs)
     task.save()  # Save to get an id assigned.
     t = threading.Thread(

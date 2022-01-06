@@ -9,7 +9,8 @@ deps: .venv
 
 .PHONY: test
 test: deps
-	pipenv run pytest
+	pipenv run pytest --cov=api tests/
+	pipenv run coverage report -m
 
 
 .PHONY: lint

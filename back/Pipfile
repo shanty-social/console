@@ -12,10 +12,12 @@ upnpy = "*"
 pywpas = "*"
 peewee = "*"
 flask-peewee = "*"
+pycron = "*"
 
 [dev-packages]
 flake8 = "*"
 pytest = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3"

@@ -24,6 +24,12 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(logging.DEBUG)
 
+_CRON_TEST = {}
+
+
+def _cron_test(*args, **kwargs):
+    _CRON_TEST['A'] = 'I ran'
+
 
 def _task_test(A, B, C=None):
     if C:
@@ -43,18 +49,30 @@ def client():
 
 
 def test_task_wait(client):
-    t = tasks.defer(_task_test, 1, 2)
+    "Ensure you can wait for a task result."
+    t = tasks.defer(_task_test, args=(1, 2))
     assert t.wait() == 3
 
 
 def test_task_cancel(client):
-    t = tasks.defer(_task_test, 1, 3, C=5.0)
+    "Ensure a task can be cancelled."
+    t = tasks.defer(_task_test, args=(1, 3), kwargs={'C': 5.0})
     t.cancel()
     with pytest.raises(CancelledError):
         t.wait()
 
 
 def test_task_timeout(client):
-    t = tasks.defer(_task_test, 1, 3, C=5.0, timeout=1.0)
+    "Ensure a task can timeout."
+    t = tasks.defer(_task_test, args=(1, 3), kwargs={'C': 5.0}, timeout=1.0)
     with pytest.raises(TimeoutException):
         t.wait()
+
+
+def test_cron(client):
+    tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
+    assert len(tasks.CRONTAB) == 1, 'Crontab did not schedule'
+    tasks.start_scheduler(interval=0.1)
+    time.sleep(0.2)
+    assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'
+    tasks.stop_scheduler()
