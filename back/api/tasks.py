@@ -2,13 +2,11 @@ import threading
 import inspect
 import logging
 
-from functools import wraps
 from datetime import datetime
 
 import pycron
 from stopit import threading_timeoutable, TimeoutException
 
-from api.app import db, app
 from api.models import Task, TaskLog
 
 
@@ -31,12 +29,12 @@ def _wrap_generator(task):
 
         while True:
             try:
-                l = TaskLog(task=task, message=next(gen))
-                LOGGER.debug('Task[%i] log: %s', task.id, l.message)
-                l.save()
+                log = TaskLog(task=task, message=next(gen))
+                LOGGER.debug('Task[%i] log: %s', task.id, log.message)
+                log.save()
                 (Task
-                    .update(tail=l)
-                    .where(Task.id==task.id)).execute()
+                    .update(tail=log)
+                    .where(Task.id == task.id)).execute()
 
             except StopIteration as e:
                 return e.value
@@ -54,7 +52,7 @@ def _task_runner(task):
     result = None
     try:
         LOGGER.debug('Task[%i] starting...', task.id)
-        result = task.function(*task.args, **task.kwargs)
+        result = runnable(*task.args, **task.kwargs)
         LOGGER.debug('Task[%i] result: %s', task.id, result)
 
     except (TimeoutException, CancelledError) as e:
@@ -74,7 +72,7 @@ def _task_runner(task):
             result=result,
             completed=datetime.now(),
         )
-        .where(Task.id==task.id)).execute()
+        .where(Task.id == task.id)).execute()
 
 
 def cron(schedule, *args, **kwargs):
@@ -116,6 +114,6 @@ def defer(f, args=(), kwargs={}, timeout=None):
         daemon=False)
     t.start()
     task.ident = t.ident
-    (Task.update(ident=t.ident).where(Task.id==task.id)).execute()
+    (Task.update(ident=t.ident).where(Task.id == task.id)).execute()
     LOGGER.debug('Task[%i] started: %s', task.id, task.ident)
     return task

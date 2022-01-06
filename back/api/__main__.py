@@ -1,7 +1,9 @@
 import os
 
 from api.app import socketio, db, app
-from api models import *
+from api.models import (
+    Setting, Task, TaskLog,
+)
 
 
 HOST = os.environ.get('FLASK_HOST', '0.0.0.0')

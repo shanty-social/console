@@ -1,10 +1,12 @@
-import enum
 import threading
 import logging
 
 from datetime import datetime
 
-from peewee import *
+from peewee import (
+    CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
+    BigIntegerField,
+)
 from playhouse.fields import PickleField
 from stopit import async_raise
 
@@ -46,7 +48,7 @@ class Task(db.Model):
 
     def get_result(self):
         # Get a fresh instance:
-        task = Task.get(Task.id==self.id)
+        task = Task.get(Task.id == self.id)
         if task.result is None:
             raise ValueError('Task not completed')
         if isinstance(task.result, Exception):
