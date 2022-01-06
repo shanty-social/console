@@ -3,11 +3,12 @@
 start_wpa() {
     # Start wpa_supplicant
     wpa_supplicant -i${INTERFACE} -Dnl80211 \
-                -c/etc/wpa_supplicant/wpa_supplicant.conf &
+                -c/etc/wpa_supplicant/wpa_supplicant.conf | grep -v CTRL-EVENT-SCAN-FAILED 2>&1 &
     WPA_PID=$!
 }
 
 start_dhcp() {
+    # Start dnsmasq for DHCP
     dnsmasq --port=0 --interface=${INTERFACE} --dhcp-authoritative \
             --address=${ADDRESS} \
             --dhcp-range=${DHCP_RANGE} --dhcp-option=1,255.255.255.0 \
@@ -16,13 +17,21 @@ start_dhcp() {
     DHCP_PID=$!
 }
 
+ifup() {
+    ifconfig ${INTERFACE} ${ADDRESS} netmask 255.255.255.0 up
+
+    # Redirect all traffic from wifi interface to the web interface.
+    #iptables -t nat -A PREROUTING -p tcp -i ${INTERFACE} -j DNAT --to-destination ${ADDRESS}:8000
+    #iptables -t nat -A POSTROUTING -j MASQUERADE
+
+    trap ifdown EXIT
+}
+
 ifdown() {
     ifconfig ${INTERFACE} down
 }
 
-ifconfig ${INTERFACE} ${ADDRESS} netmask 255.255.255.0 up
-trap ifdown EXIT
-
+ifup
 start_dhcp
 start_wpa
 
@@ -34,6 +43,7 @@ while true; do
             continue 2
         fi
     done
+
     # IF here all pids are dead.
     echo All pids dead, exiting...
     break

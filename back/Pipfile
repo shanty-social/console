@@ -9,7 +9,9 @@ flask-socketio = "*"
 stopit = "*"
 docker-py = "*"
 upnpy = "*"
-flask-sqlalchemy = "*"
+pywpas = "*"
+peewee = "*"
+flask-peewee = "*"
 
 [dev-packages]
 flake8 = "*"
