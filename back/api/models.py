@@ -48,7 +48,7 @@ class Task(db.Model):
 
     def get_result(self):
         # Get a fresh instance:
-        task = Task.get(Task.id == self.id)
+        task = self.refresh()
         if task.result is None:
             raise ValueError('Task not completed')
         if isinstance(task.result, Exception):
@@ -63,7 +63,6 @@ class Task(db.Model):
         async_raise(self.ident, CancelledError)
 
     def wait(self, timeout=None):
-        # Get a fresh instance:
         LOGGER.debug('Task[%i] waiting, ident: %s', self.id, self.ident)
         for t in threading.enumerate():
             LOGGER.debug('Comparing %s == %s', t.ident, self.ident)
@@ -81,9 +80,12 @@ class Task(db.Model):
             raise TimeoutError('Timed out waiting for thread')
         return self.get_result()
 
+    def refresh(self):
+        return type(self).get(self._pk_expr())
+
 
 class TaskLog(db.Model):
     "Background task log output"
     task = ForeignKeyField(Task, backref='log')
-    created = DateTimeField()
+    created = DateTimeField(default=datetime.now)
     message = CharField()

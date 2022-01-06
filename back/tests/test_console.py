@@ -2,13 +2,15 @@ import os
 import time
 import tempfile
 import logging
+import atexit
 
 import pytest
 
 from api import config
 
 DBFD, DBPATH = tempfile.mkstemp()
-os.remove(DBPATH)
+#os.remove(DBPATH)
+atexit.register(os.remove, DBPATH)
 os.close(DBFD)
 
 # Settings under test.
@@ -40,6 +42,12 @@ def _task_test(A, B, C=None):
     return A + B
 
 
+def _task_log_test(A):
+    for i in range(A):
+        yield f'Log message: {i}'
+    return A + 3
+
+
 @pytest.fixture
 def client():
     create_tables()
@@ -67,6 +75,16 @@ def test_task_timeout(client):
     t = tasks.defer(_task_test, args=(1, 3), kwargs={'C': 5.0}, timeout=1.0)
     with pytest.raises(TimeoutException):
         t.wait()
+
+
+def test_task_log(client):
+    "Ensure a generator emits logs."
+    t = tasks.defer(_task_log_test, args=(4,))
+    assert t.wait() == 7, 'Invalid return value'
+    t = t.refresh()
+    assert t.tail.message == 'Log message: 3', 'Last log message is incorrect'
+    for i, log in enumerate(t.log):
+        assert log.message.endswith(str(i)), 'Log messages mismatch'
 
 
 def test_cron(client):
