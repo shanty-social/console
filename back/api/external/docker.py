@@ -5,7 +5,6 @@ import requests
 import docker
 from docker.errors import ImageNotFound
 
-from api.tasks import cron
 from api.models import Service
 from api.config import SERVICE_URL, DOCKER_SOCKET_PATH
 
@@ -14,38 +13,6 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 VERSION_PATTERN = re.compile(r'[\d\.]+')
-
-
-@cron('0 */4 * * *')
-def update_services():
-    "Pull service information from website and update local data."
-    if not SERVICE_URL:
-        LOGGER.warning('Cannot update service descriptions, no URL')
-        return
-
-    data = requests.get(SERVICE_URL).json()
-    for obj in data:
-        try:
-            service = Service.get(Service.name == obj['name'])
-
-        except Service.DoesNotExist:
-            service = Service(name=obj['name'])
-
-        info = ServiceInfo.get()
-        service.downloaded, service.installed_version = \
-            info.get_installed_version(service.name)
-        service.latest_version = obj['version']
-        for attr in ('group', 'icon', 'description'):
-            setattr(service, attr, obj[attr])
-
-        service.save()
-
-    data_names = [obj.name for obj in data]
-    for service in Service.select():
-        if service.name not in data_names:
-            LOGGER.info('Purging service: %s', service.name)
-            service.delete_instance()
-            continue
 
 
 class ServiceInfo:

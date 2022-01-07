@@ -1,5 +1,7 @@
-from flask import send_from_directory
+from flask import send_from_directory, request
 from restless.fl import FlaskResource
+from restless.serializers import Serializer
+from restless.utils import json, MoreTypesJSONEncoder
 from werkzeug.exceptions import HTTPException
 
 
@@ -13,6 +15,74 @@ def root():
     application).
     """
     return send_from_directory('../templates', 'index.html')
+
+
+def to_text(settings):
+    def _setting_to_text(o):
+        return f'{o["name"]}={o["value"]}'
+
+    def _dict_to_text(o, indent=0):
+        lines = []
+        for name, value in o.items():
+            if isinstance(value, dict):
+                lines.append(f'{name}=')
+                lines.append(_dict_to_text(value, indent=indent+1))
+            else:
+                lines.append(('  ' * indent) + f'{name}={value}')
+        return '\n'.join(lines)
+
+    if 'objects' in settings:
+        # Multiple settings objects.
+        lines = []
+        for setting in settings['objects']:
+            lines.append(_setting_to_text(setting))
+        return '\n'.join(lines)
+
+    elif 'name' in settings and 'value' in settings:
+        # A settings object.
+        return _setting_to_text(settings)
+
+    else:
+        # Something else:
+        _dict_to_text(settings)
+
+
+def from_text(text):
+    def _from_text(s):
+        name, value = s.split('=')
+        name = name.upper()
+        return name, value
+
+    settings = {}
+    if '\n' in text:
+        lines = settings['objects'] = []
+        for line in text.splitlines():
+            name, value = _from_text(line)
+            lines.append({
+                'name': name,
+                'value': value,
+            })
+
+    else:
+        settings['name'], settings['value'] = _from_text(text)
+
+    return settings
+
+
+class TextOrJSONSerializer(Serializer):
+    def deserialize(self, body):
+        ct = request.args.get('format', 'json')
+        if ct == 'text':
+            return from_text(body.decode('utf-8'))
+        else:
+            return json.loads(body)
+
+    def serialize(self, data):
+        ct = request.args.get('format', 'json')
+        if ct == 'text':
+            return to_text(data)
+        else:
+            return json.dumps(data, cls=MoreTypesJSONEncoder)
 
 
 class BaseResource(FlaskResource):
