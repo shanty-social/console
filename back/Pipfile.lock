@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f34b9f42c981a8b6d0866544b813ecd25841ee6e9739972d96d3220bf90b3566"
+            "sha256": "c9fb99f29d9595e9389eaedd1f02ee5a21040d7309c76d9f3928060c8b3c4bce"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -23,6 +23,14 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==0.21.4"
+        },
+        "cachelib": {
+            "hashes": [
+                "sha256:378f3bd2d43381aedc6c02a4cfd11182b3c90eb77ac8e3203401df93b4b304cb",
+                "sha256:dfda806c0929c131f6f6c3fe555b52b953c69bd84a6425ddfbdced289b65b48e"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==0.5.0"
         },
         "certifi": {
             "hashes": [
@@ -62,6 +70,22 @@
             ],
             "index": "pypi",
             "version": "==2.0.2"
+        },
+        "flask-caching": {
+            "hashes": [
+                "sha256:bcda8acbc7508e31e50f63e9b1ab83185b446f6b6318bd9dd1d45626fba2e903",
+                "sha256:cf19b722fcebc2ba03e4ae7c55b532ed53f0cbf683ce36fafe5e881789a01c00"
+            ],
+            "index": "pypi",
+            "version": "==1.10.1"
+        },
+        "flask-oauthlib": {
+            "hashes": [
+                "sha256:5bb79c8a8e670c2eb4cb553dfc3283b6c8d1202f674934676dc173cee94fe39c",
+                "sha256:a5c3b62959aa1922470a62b6ebf4273b75f1c29561a7eb4a69cde85d45a1d669"
+            ],
+            "index": "pypi",
+            "version": "==0.9.6"
         },
         "flask-peewee": {
             "hashes": [
@@ -185,6 +209,13 @@
             "markers": "python_version >= '3.6'",
             "version": "==2.0.1"
         },
+        "oauthlib": {
+            "hashes": [
+                "sha256:ac35665a61c1685c56336bda97d5eefa246f1202618a1d6f34fccb1bdd404162",
+                "sha256:d883b36b21a6ad813953803edfa563b1b579d79ca758fe950d1bc9e8b326025b"
+            ],
+            "version": "==2.1.0"
+        },
         "peewee": {
             "hashes": [
                 "sha256:01bd7f734defb08d7a3346a0c0ca7011bc8d0d685934ec0e001b3371d522ec53"
@@ -230,6 +261,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
             "version": "==2.27.1"
+        },
+        "requests-oauthlib": {
+            "hashes": [
+                "sha256:490229d14a98e1b69612dcc1a22887ec14f5487dc1b8c6d7ba7f77a42ce7347b",
+                "sha256:be76f2bb72ca5525998e81d47913e09b1ca8b7957ae89b46f787a79e68ad5e61",
+                "sha256:eabd8eb700ebed81ba080c6ead96d39d6bdc39996094bd23000204f6965786b0"
+            ],
+            "version": "==1.1.0"
         },
         "restless": {
             "hashes": [
@@ -283,6 +322,13 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4' and python_version < '4'",
             "version": "==1.26.7"
+        },
+        "uwsgi": {
+            "hashes": [
+                "sha256:88ab9867d8973d8ae84719cf233b7dafc54326fcaec89683c3f9f77c002cdff9"
+            ],
+            "index": "pypi",
+            "version": "==2.0.20"
         },
         "websocket-client": {
             "hashes": [

@@ -35,7 +35,7 @@ class SettingResource(BaseResource):
         return get_object_or_404(Setting, Setting.name == pk)
 
     def create(self):
-        "Create a new setting."
+        "Create a new setting(s)."
         setting = Setting(**self.data)
         setting.save()
         return setting
@@ -48,11 +48,12 @@ class SettingResource(BaseResource):
 
     def update(self, pk):
         "Update single setting."
-        setting = Setting.get(Setting.name == pk)
+        setting = get_object_or_404(Setting, Setting.name == pk)
         setting.group = self.data.get('group')
         setting.value = self.data.get('value')
         return setting
 
     def delete(self, pk):
-        "Delete settings."
-        Setting.delete().where(Setting.name == pk)
+        "Delete single setting."
+        setting = get_object_or_404(Setting, Setting.name == pk)
+        setting.delete_instance()

@@ -46,6 +46,7 @@ services:
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=8000
       - FLASK_DB_PATH=/var/lib/console/db.sqlite3
+      - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
 
   front:
     image: back

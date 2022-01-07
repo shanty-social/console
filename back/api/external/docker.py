@@ -1,7 +1,6 @@
 import re
 import logging
 
-import requests
 import docker
 from docker.errors import ImageNotFound
 

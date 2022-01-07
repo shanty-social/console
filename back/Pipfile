@@ -16,6 +16,9 @@ restless = "*"
 setuptools = "*"
 docker = "*"
 simple-websocket = "*"
+flask-caching = "*"
+uwsgi = "*"
+flask-oauthlib = "*"
 
 [dev-packages]
 flake8 = "*"

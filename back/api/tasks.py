@@ -30,7 +30,7 @@ def _wrap_generator(task):
         while True:
             try:
                 log = TaskLog(task=task, message=next(gen))
-                LOGGER.debug('Task[%i] log: %s', task.id, log.message)
+                LOGGER.debug('Task[%s] log: %s', task.id, log.message)
                 log.save()
                 (Task
                     .update(tail=log)
@@ -51,22 +51,22 @@ def _task_runner(task):
 
     result = None
     try:
-        LOGGER.debug('Task[%i] starting...', task.id)
+        LOGGER.debug('Task[%s] starting...', task.id)
         result = runnable(*task.args, **task.kwargs)
-        LOGGER.debug('Task[%i] result: %s', task.id, result)
+        LOGGER.debug('Task[%s] result: %s', task.id, result)
 
     except (TimeoutException, CancelledError) as e:
         result = e
 
     except Exception as e:
-        LOGGER.exception('Task[%i] error', task.id)
+        LOGGER.exception('Task[%s] error', task.id)
         result = e
 
     finally:
-        LOGGER.debug('Task[%i] completed...', task.id)
+        LOGGER.debug('Task[%s] completed...', task.id)
 
     # Update task information
-    LOGGER.debug('Task[%i] saving...', task.id)
+    LOGGER.debug('Task[%s] saving...', task.id)
     (Task
         .update(
             result=result,
@@ -78,7 +78,9 @@ def _task_runner(task):
 def cron(schedule, *args, **kwargs):
     "Decorate a function to define a run schedule and arguments."
     def inner(f):
+        LOGGER.info('Scheduling task %s at %s', f.__name__, schedule)
         CRONTAB.append((schedule, f, args, kwargs))
+        return f
     return inner
 
 
@@ -87,13 +89,14 @@ def start_scheduler(interval=60.0):
     global CRON
 
     def _scheduler():
-        LOGGER.debug('Scheduler checking %i schedules', len(CRONTAB))
+        LOGGER.debug('Scheduler checking %i tasks', len(CRONTAB))
         for schedule, f, args, kwargs in CRONTAB:
             if pycron.is_now(schedule):
                 LOGGER.debug(
                     'Schedule %s is now, executing task %s', schedule, f)
                 defer(f, args, kwargs)
 
+    LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
     CRON = threading.Timer(interval, _scheduler)
     CRON.start()
 
@@ -108,12 +111,18 @@ def stop_scheduler():
 def defer(f, args=(), kwargs={}, timeout=None):
     "Defer a function to run as a task."
     task = Task(function=f, args=args, kwargs=kwargs)
-    task.save()  # Save to get an id assigned.
+    task.save(force_insert=True)  # Save to get an id assigned.
     t = threading.Thread(
         target=_task_runner, args=(task,), kwargs={'timeout': timeout},
-        daemon=False)
+        daemon=False, name=str(task.id))
     t.start()
-    task.ident = t.ident
-    (Task.update(ident=t.ident).where(Task.id == task.id)).execute()
-    LOGGER.debug('Task[%i] started: %s', task.id, task.ident)
+    LOGGER.debug('Task[%s] started', task.id)
     return task
+
+
+def find_thread(uuid):
+    for t in threading.enumerate():
+        LOGGER.debug('Comparing %s == %s', t.name, uuid)
+        if t.name == uuid:
+            LOGGER.debug('Task[%s] found', uuid)
+            return t

@@ -17,6 +17,12 @@ def root():
     return send_from_directory('../templates', 'index.html')
 
 
+def to_bool(s):
+    if not s or not s.lower() in ('on', 'true', 'yes'):
+        return False
+    return False
+
+
 def to_text(settings):
     def _setting_to_text(o):
         return f'{o["name"]}={o["value"]}'
@@ -48,25 +54,11 @@ def to_text(settings):
 
 
 def from_text(text):
-    def _from_text(s):
-        name, value = s.split('=')
-        name = name.upper()
-        return name, value
-
-    settings = {}
-    if '\n' in text:
-        lines = settings['objects'] = []
-        for line in text.splitlines():
-            name, value = _from_text(line)
-            lines.append({
-                'name': name,
-                'value': value,
-            })
-
-    else:
-        settings['name'], settings['value'] = _from_text(text)
-
-    return settings
+    name, value = text.split('=')
+    return {
+        'name': name.upper(),
+        'value': value,
+    }
 
 
 class TextOrJSONSerializer(Serializer):

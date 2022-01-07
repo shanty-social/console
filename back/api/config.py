@@ -7,6 +7,9 @@ DATABASE = {
     'name': os.environ.get('FLASK_DB_PATH', '/var/lib/db.sqlite3'),
 }
 
+CACHE_TYPE = os.environ.get('FLASK_CACHE_TYPE', 'SimpleCache')
+CACHE_UWSGI_NAME = 'default'
+
 DEBUG = os.environ.get('FLASK_DEBUG', '').lower() == 'true'
 
 SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'Super secret!')
@@ -17,8 +20,4 @@ DOCKER_SOCKET_PATH = os.environ.get('FLASK_DOCKER_SOCKET_PATH', None)
 
 SERVICE_URL = os.environ.get('FLASK_SERVICE_URL', None)
 
-LOG_LEVEL = os.environ.get('FLASK_LOG_LEVEL', None)
-if LOG_LEVEL:
-    logging.getLogger().setLevel(
-        getattr(logging, LOG_LEVEL.upper(), logging.INFO))
-    logging.getLogger().addHandler(logging.StreamHandler())
+LOG_LEVEL = os.environ.get('FLASK_LOG_LEVEL', 'ERROR')

@@ -1,11 +1,14 @@
 import threading
 import logging
+from uuid import uuid4
 
 from datetime import datetime
 
+from pkg_resources import parse_version
+from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    BigIntegerField, TextField, BooleanField
+    BigIntegerField, TextField, BooleanField, UUIDField,
 )
 from playhouse.fields import PickleField
 from stopit import async_raise
@@ -26,6 +29,24 @@ class UpperCharField(CharField):
         return val.upper()
 
 
+class JSONField(TextField):
+    "Custom field to store JSON."
+    def python_value(self, val):
+        return json.loads(val)
+
+    def db_value(self, val):
+        return json.dumps(data, cls=MoreTypesJSONEncoder)
+
+
+class VersionField(CharField):
+    "Custom field to store version strings."
+    def python_value(self, val):
+        return parse_version(val)
+
+    def db_value(self, val):
+        return str(val)
+    
+
 class Setting(db.Model):
     "Store settings."
     group = CharField(default='default')
@@ -38,18 +59,18 @@ class Setting(db.Model):
 
 class Task(db.Model):
     "Background task."
+    id = UUIDField(primary_key=True, default=uuid4)
     function = PickleField()
     args = PickleField(null=True)
     kwargs = PickleField(null=True)
     result = PickleField(null=True)
-    ident = BigIntegerField(null=True)
     created = DateTimeField(default=datetime.now)
     completed = DateTimeField(default=None, null=True)
     tail = DeferredForeignKey('TaskLog', backref='tail_of', null=True)
 
     def __unicode__(self):
-        return f'<Task {self.function.__name__}, args={self.args}, ' \
-               f'kwargs={self.kwargs}>'
+        return f'<Task {self.id}, {self.function.__name__}, ' \
+               f'args={self.args}, kwargs={self.kwargs}>'
 
     def get_result(self):
         # Get a fresh instance:
@@ -61,21 +82,17 @@ class Task(db.Model):
         return task.result
 
     def cancel(self):
-        if self.ident is None:
-            raise ValueError('No thread identity')
-        from api.tasks import CancelledError
-        LOGGER.debug('Task[%i] Cancelling')
-        async_raise(self.ident, CancelledError)
+        from api.tasks import CancelledError, find_thread
+        LOGGER.debug('Task[%s] Cancelling', self.id)
+        t = find_thread(str(self.id))
+        async_raise(t.ident, CancelledError)
 
     def wait(self, timeout=None):
-        LOGGER.debug('Task[%i] waiting, ident: %s', self.id, self.ident)
-        for t in threading.enumerate():
-            LOGGER.debug('Comparing %s == %s', t.ident, self.ident)
-            if t.ident == self.ident:
-                LOGGER.debug('Task[%i] found ident: %s', self.id, self.ident)
-                break
-        else:
-            LOGGER.debug('Task[%i] ident not found: %s', self.id, self.ident)
+        from api.tasks import find_thread
+        LOGGER.debug('Task[%s] waiting', self.id)
+        t = find_thread(str(self.id))
+        if t is None:
+            LOGGER.debug('Task[%s] not found', self.id)
             # Already done?
             return self.get_result()
         # Still running, wait...
@@ -100,14 +117,15 @@ class TaskLog(db.Model):
 
 
 class Service(db.Model):
-    "Services available to be deployed."
+    "Services the user has chosen to deploy."
+    uuid = UUIDField(primary_key=True)
     name = CharField()
     group = CharField(default='default')
     icon = CharField(null=True)
     description = TextField(null=True)
-    downloaded = BooleanField(default=False)
-    latest_version = CharField()
-    installed_version = CharField(null=True)
+    version = CharField(null=False)
+    enabled = BooleanField(default=True)
+    meta = JSONField(null=False)
 
     def __unicode__(self):
         return f'<Service name={self.name}>'

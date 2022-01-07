@@ -5,6 +5,7 @@ import pytest
 
 from api import tasks
 from api.tasks import CancelledError, TimeoutException
+from api.models import Task
 
 
 LOGGER = logging.getLogger()
@@ -57,7 +58,7 @@ def test_task_timeout():
         t.wait()
 
 
-def test_task_log(client):
+def test_task_log():
     "Ensure a generator emits logs."
     t = tasks.defer(_task_log_test, args=(4,))
     assert t.wait() == 7, 'Invalid return value'
@@ -67,7 +68,7 @@ def test_task_log(client):
         assert log.message.endswith(str(i)), 'Log messages mismatch'
 
 
-def test_cron(client):
+def test_cron():
     "Test task scheduling."
     crons = len(tasks.CRONTAB)
     tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
@@ -76,3 +77,10 @@ def test_cron(client):
     time.sleep(0.2)
     assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'
     tasks.stop_scheduler()
+
+
+def test_task_exception(client):
+    t = Task(function=test_task_exception, result=Exception('BOOM'))
+    t.save()
+    r = client.get('/api/tasks/')
+    assert r.status_code == 200, 'Invalid status code'
