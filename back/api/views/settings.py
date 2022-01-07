@@ -1,6 +1,8 @@
 import logging
 
 from restless.preparers import FieldsPreparer
+from restless.serializers import Serializer
+from restless.utils import json, MoreTypesJSONEncoder
 from flask import request
 from flask_peewee.utils import get_object_or_404
 
@@ -12,6 +14,65 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
+def to_text(settings):
+    def _to_text(o):
+        return f'{o["name"]}={o["value"]}'
+
+    if 'objects' in settings:
+        lines = []
+        for setting in settings['objects']:
+            lines.append(_to_text(setting))
+        return '\n'.join(lines)
+
+    else:
+        return _to_text(settings)
+
+
+def from_text(text):
+    def _from_text(s):
+        name, value = s.split('=')
+        name = name.upper()
+        return name, value
+
+    settings = {}
+    if '\n' in text:
+        lines = settings['objects'] = []
+        for line in text.splitlines():
+            name, value = _to_text(line)
+            lines.append({
+                'name': name,
+                'value': value,
+            })
+
+    else:
+        name, value = _from_text(text)
+        settings['name'] = name
+        settings['value'] = value
+
+    return settings
+
+
+class TextOrJSONSerializer(Serializer):
+    def deserialize(self, body):
+        # This is Django-specific, but all frameworks can handle GET
+        # parameters...
+        ct = request.args.get('format', 'json')
+
+        if ct == 'text':
+            return from_text(body)
+        else:
+            return json.loads(body)
+
+    def serialize(self, data):
+        # Again, Django-specific.
+        ct = request.args.get('format', 'json')
+
+        if ct == 'text':
+            return to_text(data)
+        else:
+            return json.dumps(data, cls=MoreTypesJSONEncoder)
+
+
 class SettingResource(BaseResource):
     "Manage settings."
     preparer = FieldsPreparer(fields={
@@ -19,6 +80,7 @@ class SettingResource(BaseResource):
         'name': 'name',
         'value': 'value',
     })
+    serializer = TextOrJSONSerializer()
 
     def list(self):
         "List all settings."

@@ -37,12 +37,20 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: build and push
+      - name: build and push console
         run: |
           docker buildx build -f docker/console/Dockerfile \
             --push \
             --tag ${{secrets.DOCKER_USER}}/console:latest \
             --tag ${{secrets.DOCKER_USER}}/console:${{env.tag}} \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 .
+
+      - name: build and push net
+        run: |
+          docker buildx build -f docker/net/Dockerfile \
+            --push \
+            --tag ${{secrets.DOCKER_USER}}/net:latest \
+            --tag ${{secrets.DOCKER_USER}}/net:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
       - name: Docker Hub Description
