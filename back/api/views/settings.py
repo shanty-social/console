@@ -38,7 +38,7 @@ def from_text(text):
     if '\n' in text:
         lines = settings['objects'] = []
         for line in text.splitlines():
-            name, value = _to_text(line)
+            name, value = _from_text(line)
             lines.append({
                 'name': name,
                 'value': value,

@@ -6,6 +6,7 @@ import docker
 from docker.errors import ImageNotFound
 
 from api.tasks import cron
+from api.models import Service
 from api.config import SERVICE_URL, DOCKER_SOCKET_PATH
 
 

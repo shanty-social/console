@@ -6,7 +6,7 @@ from flask_peewee.utils import get_object_or_404
 
 from api.models import Service
 from api.views import BaseResource
-from api.external.docker import ServiceInfo
+# from api.external.docker import ServiceInfo
 
 
 LOGGER = logging.getLogger(__name__)
