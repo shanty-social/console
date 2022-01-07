@@ -23,7 +23,20 @@ socketio = SocketIO(app)
 db = Database(app)
 
 # Set up urls and views.
+# Home page (in production mode, vue application.)
 app.add_url_rule('/', view_func=root)
+
+
+# These need models, which require db defined above.
+from api.views.wifi import NetworkResource, scan  # noqa: E402
+from api.views.settings import SettingResource  # noqa: E402
+from api.views.services import ServiceResource  # noqa: E402
+
+# API endpoints.
+app.add_url_rule('/api/wifi/scan/', view_func=scan, methods=['POST'])
+NetworkResource.add_url_rules(app, rule_prefix='/api/wifi/networks/')
+SettingResource.add_url_rules(app, rule_prefix='/api/settings/')
+ServiceResource.add_url_rules(app, rule_prefix='/api/services/')
 
 
 def create_tables():

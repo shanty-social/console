@@ -69,8 +69,9 @@ def test_task_log(client):
 
 def test_cron(client):
     "Test task scheduling."
+    crons = len(tasks.CRONTAB)
     tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
-    assert len(tasks.CRONTAB) == 1, 'Crontab did not schedule'
+    assert len(tasks.CRONTAB) == crons + 1, 'Crontab did not schedule'
     tasks.start_scheduler(interval=0.1)
     time.sleep(0.2)
     assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'

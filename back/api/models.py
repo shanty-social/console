@@ -5,7 +5,7 @@ from datetime import datetime
 
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    BigIntegerField,
+    BigIntegerField, TextField, BooleanField
 )
 from playhouse.fields import PickleField
 from stopit import async_raise
@@ -18,7 +18,7 @@ LOGGER.addHandler(logging.NullHandler())
 
 
 class UpperCharField(CharField):
-    "Custom field to ensure values are upppercase"
+    "Custom field to ensure values are upppercase."
     def python_value(self, val):
         return val.upper()
 
@@ -27,8 +27,8 @@ class UpperCharField(CharField):
 
 
 class Setting(db.Model):
-    "Store settings"
-    group = CharField(null=True)
+    "Store settings."
+    group = CharField(default='default')
     name = UpperCharField(unique=True)
     value = PickleField(null=False)
 
@@ -37,7 +37,7 @@ class Setting(db.Model):
 
 
 class Task(db.Model):
-    "Background task"
+    "Background task."
     function = PickleField()
     args = PickleField(null=True)
     kwargs = PickleField(null=True)
@@ -90,10 +90,24 @@ class Task(db.Model):
 
 
 class TaskLog(db.Model):
-    "Background task log output"
+    "Background task log output."
     task = ForeignKeyField(Task, backref='log')
     created = DateTimeField(default=datetime.now)
     message = CharField()
 
     def __unicode__(self):
         return f'<TaskLog {self.message}>'
+
+
+class Service(db.Model):
+    "Services available to be deployed."
+    name = CharField()
+    group = CharField(default='default')
+    icon = CharField(null=True)
+    description = TextField(null=True)
+    downloaded = BooleanField(default=False)
+    latest_version = CharField()
+    installed_version = CharField(null=True)
+
+    def __unicode__(self):
+        return f'<Service name={self.name}>'

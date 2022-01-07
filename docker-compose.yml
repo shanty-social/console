@@ -2,7 +2,6 @@ version: "3.7"
 
 volumes:
   db:
-  wpa_ctrl:
 
 services:
 
@@ -14,10 +13,13 @@ services:
     privileged: true
     network_mode: host
     volumes:
-      - wpa_ctrl:/var/run/wpa_supplicant
+      - /tmp/wpa_sock:/var/run/sockets
       - ./docker/net/entrypoint.sh:/entrypoint.sh:ro
-      - ./docker/net/wpa_supplicant.conf:/etc/wpa_supplicant/wpa_supplicant.conf
+      - ./docker/net/wpa_supplicant.conf.tmpl:/etc/wpa_supplicant/wpa_supplicant.conf.tmpl
+      - ./docker/net/nodogsplash.conf.tmpl:/etc/nodogsplash/nodogsplash.conf.tmpl
     environment:
+      - WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
+      - NDS_SOCKET_PATH=/var/run/sockets/nds
       - INTERFACE=wlx1cbfce6bc882
       - ADDRESS=192.168.102.254
       - DHCP_RANGE=192.168.102.100,192.168.102.150,1h
@@ -31,16 +33,19 @@ services:
     volumes:
       - ./back:/app:ro
       - ./docker/console/entrypoint-app.sh:/entrypoint.sh:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - db:/var/tmp/
-      - wpa_ctrl:/var/run/wpa_supplicant
+      - /var/run/docker.sock:/var/run/sockets/docker.sock
+      - db:/var/lib/console/
+      - /tmp/wpa_sock:/var/run/sockets
     environment:
-      - WPA_SUPPLICANT_CONTROL=/var/run/wpa_supplicant
+      - FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
+      - FLASK_NDS_SOCKET_PATH=/var/run/sockets/nds
+      - FLASK_DOCKER_SOCKET_PATH=/var/run/sockets/docker.sock
+      - FLASK_SERVICE_URL=http://shanty.social/api/services/
       - FLASK_LOG_LEVEL=DEBUG
       - FLASK_DEBUG=true
       - FLASK_HOST=0.0.0.0
       - FLASK_PORT=8000
-      - FLASK_DB_PATH=/var/tmp/db.sqlite3
+      - FLASK_DB_PATH=/var/lib/console/db.sqlite3
 
   front:
     image: back

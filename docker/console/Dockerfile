@@ -8,10 +8,9 @@ ADD ./docker/console/entrypoint-app.sh /entrypoint.sh
 # Install Python
 WORKDIR /app
 RUN apk add --no-cache alpine-sdk python3 py3-pip python3-dev && \
-    pip install pipenv setuptools && \
+    pip install pipenv && \
     pipenv install --system && \
-    pip uninstall -y pipenv && \
-    apk del py3-pip alpine-sdk python3-dev
+    apk del alpine-sdk python3-dev
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 

@@ -1,4 +1,6 @@
 from flask import send_from_directory
+from restless.fl import FlaskResource
+from werkzeug.exceptions import HTTPException
 
 
 def root():
@@ -11,3 +13,25 @@ def root():
     application).
     """
     return send_from_directory('../templates', 'index.html')
+
+
+class BaseResource(FlaskResource):
+    def is_authenticated(self):
+        return True
+
+    def handle_error(self, err):
+        """
+        When an exception is encountered, this generates a serialized error
+        message to return the user.
+        :param err: The exception seen. The message is exposed to the user, so
+            beware of sensitive data leaking.
+        :type err: Exception
+        :returns: A response object
+        """
+        if self.bubble_exceptions():
+            raise err
+
+        if issubclass(err.__class__, HTTPException):
+            raise err
+
+        return self.build_error(err)
