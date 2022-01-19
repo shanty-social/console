@@ -13,24 +13,27 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
-result_preparer = FieldsPreparer(fields={
+exc_preparer = FieldsPreparer(fields={
     'type': 'type',
     'value': 'value',
 })
 
 
 class ResultPreparer(FieldsPreparer):
+    "Handle special cases."
+
     def lookup_data(self, lookup, data):
+        "function and result fields are callables that we don't want called."
         if lookup == 'function':
             return data.function.__name__
         elif lookup == 'result':
-            val = getattr(data, lookup, None)
-            if val is None:
-                val = data[lookup]
-            return result_preparer.prepare({
-                'type': val.__class__.__name__,
-                'value': str(val),
-            })
+            try:
+                return data.get_result()
+            except Exception as e:
+                return exc_preparer.prepare({
+                    'type': e.__class__.__name__,
+                    'value': str(e),
+                })
         return super().lookup_data(lookup, data)
 
 

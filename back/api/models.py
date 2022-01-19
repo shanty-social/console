@@ -20,6 +20,26 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.NullHandler())
 
 
+def create_tables():
+    "Create database tables."
+    import api.models
+    models = [
+        m for m in api.models.__dict__.values() \
+            if isinstance(m, type) and issubclass(m, db.Model)
+    ]
+    db.database.create_tables(models, safe=True)
+
+
+def drop_tables():
+    "Drop database tables (used between tests)."
+    import api.models
+    models = [
+        m for m in api.models.__dict__.values() \
+            if isinstance(m, type) and issubclass(m, db.Model)
+    ]
+    db.database.drop_tables(models, safe=True)
+
+
 class UpperCharField(CharField):
     "Custom field to ensure values are upppercase."
     def python_value(self, val):

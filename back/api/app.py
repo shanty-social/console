@@ -1,16 +1,29 @@
 import os
 import logging
 
+from authlib.integrations.flask_client import OAuth
+
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_peewee.db import Database
 from flask_caching import Cache
-
-from api.views import root
+from flask_session import Session
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.StreamHandler())
+
+
+def _fetch_token(name):
+    from models import Setting
+    return Setting.get_or_none(name=f'OAUTH_TOKEN_{name}')
+
+
+def _update_token(name, token):
+    from models import Setting
+    setting = Setting.get_or_create(name=f'OAUTH_TOKEN_{name}')
+    setting.value = token
+    setting.save()
 
 
 app = Flask(
@@ -20,44 +33,7 @@ app.config.from_object('api.config')
 socketio = SocketIO(app)
 db = Database(app)
 cache = Cache(app)
-
-# Set up urls and views.
-# Home page (in production mode, vue application.)
-app.add_url_rule('/', view_func=root)
-
-
-# These need models, which require db defined above.
-from api.views.wifi import NetworkResource, scan  # noqa: E402
-from api.views.settings import SettingResource  # noqa: E402
-from api.views.services import ServiceResource, refresh  # noqa: E402
-from api.views.tasks import TaskResource, TaskLogResource  # noqa: E402
-
-# API endpoints.
-app.add_url_rule('/api/wifi/scan/', view_func=scan, methods=['POST'])
-NetworkResource.add_url_rules(app, rule_prefix='/api/wifi/networks/')
-SettingResource.add_url_rules(app, rule_prefix='/api/settings/')
-ServiceResource.add_url_rules(app, rule_prefix='/api/services/registry/')
-app.add_url_rule(
-    '/api/services/refresh/', view_func=refresh, methods=['POST'])
-TaskResource.add_url_rules(app, rule_prefix='/api/tasks/')
-app.add_url_rule('/api/tasks/<pk>/log/', view_func=TaskLogResource.as_list())
-
-
-def create_tables():
-    "Create database tables."
-    import api.models
-    models = [
-        m for m in api.models.__dict__.values() \
-            if isinstance(m, type) and issubclass(m, db.Model)
-    ]
-    db.database.create_tables(models, safe=True)
-
-
-def drop_tables():
-    "Drop database tables (used between tests)."
-    import api.models
-    models = [
-        m for m in api.models.__dict__.values() \
-            if isinstance(m, type) and issubclass(m, db.Model)
-    ]
-    db.database.drop_tables(models, safe=True)
+oauth = OAuth(
+    app, cache=cache, fetch_token=_fetch_token, update_token=_update_token)
+oauth.register(name='shanty')
+Session(app)

@@ -4,13 +4,15 @@ FROM ${ARCH}alpine:3.15 AS python
 ADD ./back/api /app/
 ADD ./back/Pipfile* /app/
 ADD ./docker/console/entrypoint-app.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Install Python
 WORKDIR /app
-RUN apk add --no-cache linux-headers build-base python3 py3-pip python3-dev && \
-    pip install pipenv && \
-    pipenv install --system && \
-    apk del build-base python3-dev
+RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography \
+                                     python3-dev git && \
+    pip install wheel pipenv && \
+    pipenv install --system --skip-lock && \
+    apk del build-base python3-dev git
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
@@ -18,11 +20,14 @@ FROM python AS node
 
 ADD ./docker/console/entrypoint-vue.sh /entrypoint.sh
 ADD ./front /front
+RUN chmod +x /entrypoint.sh
 
 # Install Node
 WORKDIR /front
 RUN apk add --no-cache nodejs npm && \
     npm i
+
+ENTRYPOINT [ "/entrypoint.sh" ]
 
 FROM node AS build
 

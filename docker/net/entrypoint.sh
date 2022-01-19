@@ -7,6 +7,8 @@ start_wpa() {
     wpa_supplicant -i${INTERFACE} -Dnl80211 -c${WPA_CONF} | \
         grep -v CTRL-EVENT-SCAN-FAILED 2>&1 &
     WPA_PID=$!
+    chown root:nobody $(dirname ${WPA_SOCKET_PATH})
+    chmod g+w ${WPA_SOCKET_PATH}
 }
 
 start_dhcp() {

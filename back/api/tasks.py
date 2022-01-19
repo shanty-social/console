@@ -84,6 +84,19 @@ def cron(schedule, *args, **kwargs):
     return inner
 
 
+class RepeatTimer(threading.Timer):
+    def run(self):
+        while True:
+            self.finished.wait(self.interval)
+            if self.finished.is_set():
+                break
+            try:
+                self.function(*self.args, **self.kwargs)
+
+            except Exception as e:
+                LOGGER.exception('Error in timer function.')
+
+
 def start_scheduler(interval=60.0):
     "Start a scheduler to run schedule cron tasks."
     global CRON
@@ -97,7 +110,7 @@ def start_scheduler(interval=60.0):
                 defer(f, args, kwargs)
 
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
-    CRON = threading.Timer(interval, _scheduler)
+    CRON = RepeatTimer(interval, _scheduler)
     CRON.start()
 
 
