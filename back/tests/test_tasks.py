@@ -79,8 +79,8 @@ def test_cron():
     tasks.stop_scheduler()
 
 
-def test_task_exception(client):
+def test_task_exception(authenticated):
     t = Task(function=test_task_exception, result=Exception('BOOM'))
     t.save()
-    r = client.get('/api/tasks/')
+    r = authenticated.get('/api/tasks/')
     assert r.status_code == 200, 'Invalid status code'

@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, session
 from restless.fl import FlaskResource
 from restless.serializers import Serializer
 from restless.utils import json, MoreTypesJSONEncoder
@@ -36,6 +36,9 @@ def _to_text(settings):
         # A settings object.
         return _setting_to_text(settings)
 
+    elif 'error' in settings:
+        return f'error: {settings["error"]}'
+
     else:
         # Something else:
         _dict_to_text(settings)
@@ -66,8 +69,13 @@ class TextOrJSONSerializer(Serializer):
 
 
 class BaseResource(FlaskResource):
+    # NOTE: authentication is required by default but can be disabled.
+    requires_auth = True
+
     def is_authenticated(self):
-        return True
+        if not self.requires_auth:
+            return True
+        return session.get('user') is not None
 
     def handle_error(self, err):
         """

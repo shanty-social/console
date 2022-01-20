@@ -1,6 +1,10 @@
-from flask import send_from_directory, url_for, redirect, session
+from http import HTTPStatus
+
+from restless.preparers import FieldsPreparer
+from flask import send_from_directory, url_for, redirect, session, request
 
 from api.app import oauth
+from api.views import BaseResource
 
 
 def root():
@@ -16,15 +20,30 @@ def root():
 
 
 def login():
+    # Kick off OAuth2 authorization.
+    next = request.query.get('next')
     redirect_uri = url_for('authorize', _external=True)
     return oauth.shanty.authorize_redirect(redirect_uri, in_fragment=True)
 
 
+def authorize():
+    # Return from OAuth2 Authorization
+    token = oauth.shanty.authorize_access_token()
+    session['user'] = oauth.shanty.get('/api/users/whoami/').json()
+    return redirect('/')
+
+
 def logout():
     del session['user']
+    return '', HTTPStatus.NO_CONTENT
 
 
-def authorize():
-    token = oauth.shanty.authorize_access_token()
-    session['user'] = oauth.shanty.get('/api/users/whoami/')
-    return redirect('/')
+class WhoamiResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'username': 'username',
+        'email': 'email',
+    })
+
+    def detail(self):
+        "Details of a particular service."
+        return session['user']

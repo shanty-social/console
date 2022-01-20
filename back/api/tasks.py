@@ -85,6 +85,11 @@ def cron(schedule, *args, **kwargs):
 
 
 class RepeatTimer(threading.Timer):
+    def __init__(self, *args, **kwargs):
+        daemon = kwargs.pop('daemon', None)
+        super().__init__(*args, **kwargs)
+        self.daemon = bool(daemon)
+
     def run(self):
         while True:
             self.finished.wait(self.interval)
@@ -110,7 +115,7 @@ def start_scheduler(interval=60.0):
                 defer(f, args, kwargs)
 
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
-    CRON = RepeatTimer(interval, _scheduler)
+    CRON = RepeatTimer(interval, _scheduler, daemon=True)
     CRON.start()
 
 
