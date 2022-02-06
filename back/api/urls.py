@@ -11,6 +11,7 @@ from api.views.tasks import TaskResource, TaskLogResource  # noqa: E402
 # Home page (in production mode, vue application.)
 app.add_url_rule('/', view_func=root)
 app.add_url_rule('/api/users/login/', view_func=login)
+app.add_url_rule('/api/users/logout/', view_func=logout)
 app.add_url_rule('/api/users/authorize/', view_func=authorize)
 app.add_url_rule('/api/users/whoami/', view_func=WhoamiResource.as_detail())
 app.add_url_rule('/api/wifi/scan/', view_func=scan, methods=['POST'])

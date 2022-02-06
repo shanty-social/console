@@ -3,8 +3,11 @@ from http import HTTPStatus
 from restless.preparers import FieldsPreparer
 from flask import send_from_directory, url_for, redirect, session, request
 
-from api.app import oauth
+from api.app import oauth, update_token, delete_token
 from api.views import BaseResource
+
+
+WHOAMI = '/api/users/whoami/'
 
 
 def root():
@@ -21,21 +24,28 @@ def root():
 
 def login():
     # Kick off OAuth2 authorization.
-    next = request.query.get('next')
+    next = request.args.get('next', '/')
+    if oauth.shanty.token:
+        session['user'] = oauth.shanty.get(WHOAMI).json()
+        return redirect(next)
+    session['next'] = next
     redirect_uri = url_for('authorize', _external=True)
     return oauth.shanty.authorize_redirect(redirect_uri, in_fragment=True)
 
 
 def authorize():
     # Return from OAuth2 Authorization
-    token = oauth.shanty.authorize_access_token()
-    session['user'] = oauth.shanty.get('/api/users/whoami/').json()
-    return redirect('/')
+    next = session.pop('next', '/')
+    update_token('shanty', oauth.shanty.authorize_access_token())
+    session['user'] = oauth.shanty.get(WHOAMI).json()
+    return redirect(next)
 
 
 def logout():
-    del session['user']
-    return '', HTTPStatus.NO_CONTENT
+    next = request.args.get('next', '/')
+    session.pop('user', None)
+    delete_token('shanty')
+    return redirect(next)
 
 
 class WhoamiResource(BaseResource):

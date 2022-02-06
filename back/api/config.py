@@ -13,12 +13,13 @@ def get_from_env_or_file(var_name, default=None):
         return os.getenv(var_name, default)
     
 
+
+TEST = 'pytest' in sys.argv
+
 DATABASE = {
     'engine': 'peewee.SqliteDatabase',
     'name': os.getenv('FLASK_DB_PATH', '/var/lib/db.sqlite3'),
 }
-
-TEST = 'tests/' in sys.argv
 
 CACHE_TYPE = os.getenv('FLASK_CACHE_TYPE', 'SimpleCache') if not TEST else 'SimpleCache'
 CACHE_UWSGI_NAME = 'default'
@@ -47,4 +48,4 @@ SHANTY_API_BASE_URL = os.getenv(
     'FLASK_SHANTY_API_BASE_URL', 'http://localhost:8000/api/')
 
 SESSION_TYPE = 'filesystem'
-SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp')
+SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
