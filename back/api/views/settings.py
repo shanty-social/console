@@ -28,6 +28,7 @@ class SettingResource(BaseResource):
         query = Setting.select()
         if group:
             query = query.where(Setting.group == group)
+        print(list(query))
         return query
 
     def detail(self, pk):
@@ -36,14 +37,23 @@ class SettingResource(BaseResource):
 
     def create(self):
         "Create a new setting(s)."
-        setting = Setting(**self.data)
-        setting.save()
+        name = self.data['name'].upper()
+        value = self.data['value']
+        setting, created = Setting.get_or_create(
+            name=name, defaults={'value': value})
+        if not created:
+            setting.value = value
+            setting.save()
         return setting
 
     def create_detail(self, pk):
         "Create single setting."
-        setting = Setting(name=pk.upper(), **self.data)
-        setting.save()
+        value = self.data['value']
+        setting, created = Setting.get_or_create(
+            name=pk.upper(), defaults={'value': value})
+        if not created:
+            setting.value = value
+            setting.save()
         return setting
 
     def update(self, pk):

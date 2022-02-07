@@ -11,24 +11,24 @@ networks:
 
 services:
 
-  net:
-    image: console/net
-    build:
-      dockerfile: ./docker/net/Dockerfile
-      context: ./
-    privileged: true
-    network_mode: host
-    volumes:
-      - /tmp/wpa_sock:/var/run/sockets
-      - ./docker/net/entrypoint.sh:/entrypoint.sh:ro
-      - ./docker/net/wpa_supplicant.conf.tmpl:/etc/wpa_supplicant/wpa_supplicant.conf.tmpl
-      - ./docker/net/nodogsplash.conf.tmpl:/etc/nodogsplash/nodogsplash.conf.tmpl
-    environment:
-      - WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
-      - NDS_SOCKET_PATH=/var/run/sockets/nds
-      - INTERFACE=wlx1cbfce6bc882
-      - ADDRESS=192.168.102.254
-      - DHCP_RANGE=192.168.102.100,192.168.102.150,1h
+  # net:
+  #   image: console/net
+  #   build:
+  #     dockerfile: ./docker/net/Dockerfile
+  #     context: ./
+  #   privileged: true
+  #   network_mode: host
+  #   volumes:
+  #     - /tmp/wpa_sock:/var/run/sockets
+  #     - ./docker/net/entrypoint.sh:/entrypoint.sh:ro
+  #     - ./docker/net/wpa_supplicant.conf.tmpl:/etc/wpa_supplicant/wpa_supplicant.conf.tmpl
+  #     - ./docker/net/nodogsplash.conf.tmpl:/etc/nodogsplash/nodogsplash.conf.tmpl
+  #   environment:
+  #     - WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
+  #     - NDS_SOCKET_PATH=/var/run/sockets/nds
+  #     - INTERFACE=wlx1cbfce6bc882
+  #     - ADDRESS=192.168.102.254
+  #     - DHCP_RANGE=192.168.102.100,192.168.102.150,1h
 
   back:
     image: console/back
@@ -48,6 +48,7 @@ services:
       - db:/var/lib/console/
       - /tmp/wpa_sock:/var/run/sockets
     environment:
+      - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
       - FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
       - FLASK_NDS_SOCKET_PATH=/var/run/sockets/nds
       - FLASK_DOCKER_SOCKET_PATH=/var/run/sockets/docker.sock
@@ -67,6 +68,8 @@ services:
       dockerfile: ./docker/console/Dockerfile
       target: node
       context: ./
+    depends_on:
+      - back
     networks:
       - private
     volumes:
@@ -79,3 +82,58 @@ services:
       - FLASK_PORT=8080
       - VUE_HOST=0.0.0.0
       - VUE_PORT=8080
+
+  ddclient:
+    image: console/ddclient
+    build:
+      dockerfile: ./docker/ddclient/Dockerfile
+      context: ./
+    depends_on:
+      - back
+    networks:
+      - private
+    volumes:
+      - ./docker/ddclient/entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/ddclient/ddclient.conf.tmpl:/etc/ddclient/ddclient.conf.tmpl:ro
+    environment:
+      - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
+      - CONSOLE_URL=http://back:8080
+
+  proxy:
+    image: console/proxy
+    build:
+      dockerfile: ./docker/proxy/Dockerfile
+      context: ./
+    depends_on:
+      - back
+    networks:
+      - private
+    volumes:
+      - ./docker/proxy/entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/proxy/nginx.conf.tmpl:/etc/nginx/nginx.conf.tmpl:ro
+    environment:
+      - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
+      - CONSOLE_URL=http://back:8080
+      - PORT=8080
+
+  conduit:
+    image: console/conduit
+    build:
+      dockerfile: ./docker/conduit/Dockerfile
+      context: ./
+    depends_on:
+      - back
+    networks:
+      - private
+    extra_hosts:
+      - www.shanty.local:192.168.100.200
+    volumes:
+      - ./docker/conduit/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
+      - CONSOLE_URL=http://back:8080
+      - SSH_FORWARD_HOST=proxy
+      - SSH_FORWARD_PORT=8080
+      - SSH_USER=foo
+      - SSH_HOST=www.shanty.local
+      - SSH_PORT=443

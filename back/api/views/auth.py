@@ -1,10 +1,13 @@
 from http import HTTPStatus
 
 from restless.preparers import FieldsPreparer
-from flask import send_from_directory, url_for, redirect, session, request
+from flask import (
+    g, send_from_directory, url_for, redirect, session, request, abort
+)
 
 from api.app import oauth, update_token, delete_token
 from api.views import BaseResource
+from api.models import User
 
 
 WHOAMI = '/api/users/whoami/'
@@ -22,7 +25,7 @@ def root():
     return send_from_directory('../templates', 'index.html')
 
 
-def login():
+def oauth_start():
     # Kick off OAuth2 authorization.
     next = request.args.get('next', '/')
     if oauth.shanty.token:
@@ -33,7 +36,7 @@ def login():
     return oauth.shanty.authorize_redirect(redirect_uri, in_fragment=True)
 
 
-def authorize():
+def oauth_authorize():
     # Return from OAuth2 Authorization
     next = session.pop('next', '/')
     update_token('shanty', oauth.shanty.authorize_access_token())
@@ -41,19 +44,79 @@ def authorize():
     return redirect(next)
 
 
-def logout():
+def oauth_end():
     next = request.args.get('next', '/')
     session.pop('user', None)
     delete_token('shanty')
     return redirect(next)
 
 
+def login():
+    next = request.args.get('next', '/')
+
+    json = request.get_json()
+    if json:
+        username = json.get('username')
+        password = json.get('password')
+    else:
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+    try:
+        user = User \
+            .select() \
+            .where(
+                User.username==username,
+                User.active==True
+            ) \
+            .get()
+    except User.DoesNotExist:
+        print(f'no user: {username}')
+        abort(403)
+
+    if not user.check_password(password):
+        abort(403)
+
+    session['authenticated'] = True
+    session['user_pk'] = user._pk
+    g.user = user
+
+    return redirect(next)
+
+
+def logout():
+    next = request.args.get('next', '/')
+    session.clear()
+    g.user = None
+    return redirect(next)
+
+
+def get_logged_in_user():
+    if session.get('authenticated'):
+        if getattr(g, 'user', None):
+            return g.user
+
+        try:
+            user = User \
+                .select() \
+                .where(
+                    User.active==True,
+                    User.id==session.get('user_pk')
+                ) \
+                .get()
+            return user
+
+        except User.DoesNotExist:
+            pass
+
+
 class WhoamiResource(BaseResource):
     preparer = FieldsPreparer(fields={
         'username': 'username',
-        'email': 'email',
+        'name': 'name',
+        'active': 'active',
     })
 
     def detail(self):
         "Details of a particular service."
-        return session['user']
+        return get_logged_in_user()

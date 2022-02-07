@@ -8,8 +8,10 @@ from pkg_resources import parse_version
 from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    BigIntegerField, TextField, BooleanField, UUIDField,
+    BigIntegerField, TextField, BooleanField, UUIDField, IntegerField,
+    SmallIntegerField,
 )
+from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
 from stopit import async_raise
 
@@ -19,25 +21,69 @@ from api.app import db
 LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.NullHandler())
 
+ENDPOINT_TYPES = [
+    'direct', 'tunnel',
+]
+DNS_PROVIDERS = [
+    'DynDNS.com', 'Zoneedit', 'EasyDNS', 'NameCheap', 'DslReports',
+    'Sitelutions', 'Loopia', 'Noip', 'Freedns', 'ChangeIP', 'CloudFlare',
+    'Google', "Duckdns", 'Freemyip', 'woima.fi', 'Yandex', 'DNS Made Easy',
+    'DonDominio', 'NearlyFreeSpeech.net', 'OVH', 'CloudDNS', 'dinahosting',
+    'Gandi', 'dnsexit', '1984.is',
+]
+DNS_URLS = {
+    'DynDNS.com': 'http://www.dyndns.com',
+    'Zoneedit': 'http://www.zoneedit.com',
+    'EasyDNS': 'http://www.easydns.com',
+    'NameCheap': 'http://www.namecheap.com',
+    'DslReports': 'http://www.dslreports.com',
+    'Sitelutions': 'http://www.sitelutions.com',
+    'Loopia': 'http://www.loopia.se',
+    'Noip': 'http://www.noip.com',
+    'Freedns': 'http://freedns.afraid.org',
+    'ChangeIP': 'http://www.changeip.com',
+    'CloudFlare': 'https://www.cloudflare.com',
+    'Google': 'http://www.google.com/domains',
+    "Duckdns": 'https://duckdns.org',
+    'Freemyip': 'https://freemyip.com',
+    'woima.fi': 'https://woima.fi',
+    'Yandex': 'https://domain.yandex.com',
+    'DNS Made Easy': 'https://dnsmadeeasy.com',
+    'DonDominio': 'https://www.dondominio.com',
+    'NearlyFreeSpeech.net': 'https://nearlyfreespeech.net/services/dns',
+    'OVH': 'https://www.ovh.com',
+    'ClouDNS': 'https://www.cloudns.net',
+    'dinahosting': 'https://dinahosting.com',
+    'Gandi': 'https://gandi.net',
+    'dnsexit': 'https://dnsexit.com/',
+    '1984.is': 'https://www.1984.is/product/freedns/',
+}
+DNS_OPTIONS = {
+    'DynDNS.com': ['username', 'password'],
+}
 
-def create_tables():
-    "Create database tables."
+
+def _get_models():
+    # TODO: can I use globals() or something else here?
     import api.models
-    models = [
+    return [
         m for m in api.models.__dict__.values() \
             if isinstance(m, type) and issubclass(m, db.Model)
     ]
-    db.database.create_tables(models, safe=True)
+
+
+def create_tables():
+    "Create database tables."
+    db.database.create_tables(_get_models(), safe=True)
+    User.get_or_create(
+        username='admin',
+        defaults={'name': 'Admin', 'password': make_password('password')}
+    )
 
 
 def drop_tables():
     "Drop database tables (used between tests)."
-    import api.models
-    models = [
-        m for m in api.models.__dict__.values() \
-            if isinstance(m, type) and issubclass(m, db.Model)
-    ]
-    db.database.drop_tables(models, safe=True)
+    db.database.drop_tables(_get_models(), safe=True)
 
 
 class UpperCharField(CharField):
@@ -136,16 +182,29 @@ class TaskLog(db.Model):
         return f'<TaskLog {self.message}>'
 
 
-class Service(db.Model):
-    "Services the user has chosen to deploy."
-    uuid = UUIDField(primary_key=True)
+class User(db.Model):
+    "User model for local authentication."
+    username = CharField()
+    password = CharField()
     name = CharField()
-    group = CharField(default='default')
-    icon = CharField(null=True)
-    description = TextField(null=True)
-    version = CharField(null=False)
-    enabled = BooleanField(default=True)
-    meta = JSONField(null=False)
+    active = BooleanField(default=True)
 
-    def __unicode__(self):
-        return f'<Service name={self.name}>'
+    def set_password(self, password):
+        self.password = make_password(password)
+
+    def check_password(self, password):
+        return check_password(password, self.password)
+
+
+class Domain(db.Model):
+    name = CharField()
+    provider = CharField(choices=DNS_PROVIDERS)
+    options = JSONField()
+
+
+class Endpoint(db.Model):
+    name = CharField()
+    host = CharField()
+    port = IntegerField()
+    type = CharField(choices=ENDPOINT_TYPES)
+    domain = ForeignKeyField(Domain)

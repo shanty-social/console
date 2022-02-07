@@ -4,6 +4,8 @@ from restless.serializers import Serializer
 from restless.utils import json, MoreTypesJSONEncoder
 from werkzeug.exceptions import HTTPException
 
+from api.app import app
+
 
 def to_bool(s):
     if not s or not s.lower() in ('on', 'true', 'yes'):
@@ -55,6 +57,8 @@ def _from_text(text):
 class TextOrJSONSerializer(Serializer):
     def deserialize(self, body):
         ct = request.args.get('format', 'json')
+        if body is None:
+            return
         if ct == 'text':
             return _from_text(body.decode('utf-8'))
         else:
@@ -62,20 +66,53 @@ class TextOrJSONSerializer(Serializer):
 
     def serialize(self, data):
         ct = request.args.get('format', 'json')
+        if data is None:
+            return
         if ct == 'text':
             return _to_text(data)
         else:
             return json.dumps(data, cls=MoreTypesJSONEncoder)
 
 
+def session_auth():
+    "Check for user in session."
+    from api.views.auth import get_logged_in_user
+    return get_logged_in_user() is not None
+
+
+def token_auth():
+    "Check auth token in Authorization: header."
+    token = app.config['AUTH_TOKEN']
+    if not token:
+        return
+    authz = request.headers['authorization']
+    if authz.startswith('Bearer '):
+        authz = authz[7:]
+    return authz == token
+
+
 class BaseResource(FlaskResource):
     # NOTE: authentication is required by default but can be disabled.
-    requires_auth = True
+    auth_required = True
+    # Auth methods can be defined on per-view basis, these are defaults.
+    auth_methods = [
+        session_auth,
+        token_auth,
+    ]
 
     def is_authenticated(self):
-        if not self.requires_auth:
+        if not self.auth_required:
             return True
-        return session.get('user') is not None
+
+        for method in self.auth_methods:
+            try:
+                if method():
+                    return True
+
+            except Exception:
+                pass
+
+        return False
 
     def handle_error(self, err):
         """

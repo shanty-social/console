@@ -3,7 +3,7 @@ import sys
 import logging
 
 from api import urls
-from api.app import socketio, db, app
+from api.app import app
 from api.models import create_tables
 from api.tasks import start_scheduler
 from api.config import LOG_LEVEL

@@ -49,3 +49,5 @@ SHANTY_API_BASE_URL = os.getenv(
 
 SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
+
+AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
