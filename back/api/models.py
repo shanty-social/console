@@ -79,6 +79,8 @@ def create_tables():
         username='admin',
         defaults={'name': 'Admin', 'password': make_password('password')}
     )
+    uuid, created = Setting.get_or_create(
+        name='CONSOLE_UUID', defaults={'value': str(uuid4())})
 
 
 def drop_tables():

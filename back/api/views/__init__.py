@@ -15,7 +15,7 @@ def to_bool(s):
 
 def _to_text(settings):
     def _setting_to_text(o):
-        return f'{o["name"]}={o["value"]}'
+        return f'{o["name"]}={json.dumps(o["value"])}'
 
     def _dict_to_text(o, indent=0):
         lines = []

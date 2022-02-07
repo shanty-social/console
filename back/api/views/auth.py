@@ -25,29 +25,41 @@ def root():
     return send_from_directory('../templates', 'index.html')
 
 
-def oauth_start():
+def oauth_start(service_name):
     # Kick off OAuth2 authorization.
     next = request.args.get('next', '/')
-    if oauth.shanty.token:
-        session['user'] = oauth.shanty.get(WHOAMI).json()
-        return redirect(next)
+    service = getattr(oauth, service_name, None)
+    if service is None:
+        abort(404)
+    if service.token:
+        # Validate token.
+        r = oauth.shanty.get(WHOAMI)
+        if r.status_code == 200:
+            return redirect(next)
+        # Delete invalid token.
+        delete_token(service_name)
     session['next'] = next
-    redirect_uri = url_for('authorize', _external=True)
-    return oauth.shanty.authorize_redirect(redirect_uri, in_fragment=True)
+    redirect_uri = url_for(
+        'oauth_authorize',
+        service_name=service_name,
+        _external=True)
+    return service.authorize_redirect(redirect_uri, in_fragment=True)
 
 
-def oauth_authorize():
+def oauth_authorize(service_name):
     # Return from OAuth2 Authorization
     next = session.pop('next', '/')
-    update_token('shanty', oauth.shanty.authorize_access_token())
-    session['user'] = oauth.shanty.get(WHOAMI).json()
+    service = getattr(oauth, service_name, None)
+    if service is None:
+        abort(404)
+    update_token('shanty', service.authorize_access_token())
+    whoami = service.get(WHOAMI).json()
     return redirect(next)
 
 
-def oauth_end():
+def oauth_end(service_name):
     next = request.args.get('next', '/')
-    session.pop('user', None)
-    delete_token('shanty')
+    delete_token(service_name)
     return redirect(next)
 
 
@@ -62,6 +74,9 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
+    if not username or not password:
+        abort(400)
+
     try:
         user = User \
             .select() \
@@ -70,12 +85,13 @@ def login():
                 User.active==True
             ) \
             .get()
+
     except User.DoesNotExist:
         print(f'no user: {username}')
-        abort(403)
+        abort(401)
 
     if not user.check_password(password):
-        abort(403)
+        abort(401)
 
     session['authenticated'] = True
     session['user_pk'] = user._pk
