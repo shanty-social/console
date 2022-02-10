@@ -114,6 +114,15 @@ class BaseResource(FlaskResource):
 
         return self.build_error(err)
 
+    @classmethod
+    def as_view(cls, name, *init_args, **init_kwargs):
+        def _wrapper(*args, **kwargs):
+            inst = cls(*init_args, **init_kwargs)
+            inst.request = request
+            return inst.handle(name, *args, **kwargs)
+        
+        return _wrapper
+
 
 def root():
     """

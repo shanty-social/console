@@ -216,24 +216,18 @@ class Domain(db.Model):
     options = JSONField()
 
     @staticmethod
-    def get_available_options(provider):
-        return DNS_OPTIONS.get(provider, [])
-
-    @staticmethod
-    def validate_options(provider, values):
-        options = Domain.get_available_options(provider)
-        missing = []
-        for option_name in options:
-            if option_name not in values:
-                missing.append(option_name)
-        return missing
+    def get_available_options(type, provider):
+        options = DNS_OPTIONS.get(provider, [])[:]
+        if type == 'static':
+            options.append('ip address')
+        return options
 
 
 class Endpoint(db.Model):
     "Endpoint model representing traffic routing."
     class Meta:
         indexes = [
-            (('host', 'http_port', 'https_port', 'path', 'domain'), True),
+            (('path', 'domain'), True),
         ]
 
     name = CharField(null=False, unique=True)

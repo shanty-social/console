@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import Endpoints from '@/pages/Endpoints'
+import Domains from '@/pages/Domains'
 
 Vue.use(Router)
 
@@ -22,6 +23,11 @@ export default new Router({
       path: '/endpoints',
       name: 'Endpoints',
       component: Endpoints
+    },
+    {
+      path: '/domains',
+      name: 'Domains',
+      component: Domains
     }
   ]
 })

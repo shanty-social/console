@@ -8,12 +8,12 @@ from upnpy.exceptions import ActionNotFoundError
 from flask import abort, jsonify
 from flask_peewee.utils import get_object_or_404
 
-from restless.preparers import FieldsPreparer
+from restless.preparers import FieldsPreparer, SubPreparer
 
 from api.app import oauth
 from api.auth import requires_auth
 from api.views import BaseResource, TextOrJSONSerializer
-from api.models import Endpoint
+from api.models import Endpoint, Domain
 from api.config import DOCKER_SOCKET_PATH
 from api.tasks import cron
 
@@ -164,15 +164,23 @@ class HostResource(BaseResource):
         return _container_details(d.containers.get(pk))
 
 
+domain_preparer = FieldsPreparer(fields={
+    'name': 'name',
+    'provider': 'provider',
+    'options': 'options',
+})
+
+
 class EndpointResource(BaseResource):
     "Manage Endpoints."
     preparer = FieldsPreparer(fields={
         'name': 'name',
         'host': 'host',
-        'port': 'port',
+        'http_port': 'http_port',
+        'https_port': 'https_port',
         'path': 'path',
         'type': 'type',
-        'domain': 'domain',
+        'domain': SubPreparer('domain', domain_preparer),
     })
     serializer = TextOrJSONSerializer()
 
@@ -189,18 +197,22 @@ class EndpointResource(BaseResource):
         try:
             name = self.data['name']
             host = self.data['host']
-            port = self.data['port']
+            http_port = self.data['http_port']
+            https_port = self.data['https_port']
             path = self.data['path']
             type = self.data['type']
-            domain = self.data['domain']
+            domain_name = self.data['domain']
         except KeyError:
             abort(400)
+        domain = get_object_or_404(Domain, Domain.name == domain_name)
         endpoint, created = Endpoint.get_or_create(
-            name=name, defaults={'host': host, 'port': port, 'path': path,
+            name=name, defaults={'host': host, 'http_port': http_port,
+                                 'https_port': https_port, 'path': path,
                                  'type': type, 'domain': domain})
         if not created:
             endpoint.host = host
-            endpoint.port = port
+            endpoint.http_port = http_port
+            endpoint.https_port = https_port
             endpoint.path = path
             endpoint.type = type
             endpoint.domain = domain
@@ -211,18 +223,22 @@ class EndpointResource(BaseResource):
         "Create single endpoint."
         try:
             host = self.data['host']
-            port = self.data['port']
+            http_port = self.data['http_port']
+            https_port = self.data['https_port']
             path = self.data['path']
             type = self.data['type']
-            domain = self.data['domain']
+            domain_name = self.data['domain']
         except KeyError:
             abort(400)
+        domain = get_object_or_404(Domain, Domain.name == domain_name)
         endpoint, created = Endpoint.get_or_create(
-            name=pk, defaults={'host': host, 'port': port, 'path': path,
-                               'type': type, 'domain': domain})
+            name=name, defaults={'host': host, 'http_port': http_port,
+                                 'https_port': https_port, 'path': path,
+                                 'type': type, 'domain': domain})
         if not created:
             endpoint.host = host
-            endpoint.port = port
+            endpoint.http_port = http_port
+            endpoint.https_port = https_port
             endpoint.path = path
             endpoint.type = type
             endpoint.domain = domain
@@ -232,11 +248,17 @@ class EndpointResource(BaseResource):
     def update(self, pk):
         "Update single endpoint."
         endpoint = get_object_or_404(Endpoint, Endpoint.name == pk)
+        domain_name = self.data.get('domain')
         endpoint.host = self.data.get('host')
-        endpoint.port = self.data.get('port')
+        endpoint.http_port = self.data.get('http_port')
+        endpoint.https_port = self.data.get('https_port')
         endpoint.path = self.data.get('path')
         endpoint.type = self.data.get('type')
-        endpoint.domain = self.data.get('domain')
+        if domain_name:
+            endpoint.domain = Domain \
+                .select() \
+                .where(Domain.name == domain_name) \
+                .get()
         endpoint.save()
         return endpoint
 

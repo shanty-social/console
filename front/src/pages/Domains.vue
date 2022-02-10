@@ -3,21 +3,21 @@
     <button
       @click="adding=!adding"
     >+</button>
-    <endpoint
+    <domain
       v-if="adding"
       :editing="true"
-    ></endpoint>
+    ></domain>
   </div>
 </template>
 
 <script>
-import Endpoint from '../components/Endpoint.vue'
+import Domain from '../components/Domain.vue'
 
 export default {
-  name: 'Endpoints',
+  name: 'Domains',
 
   components: {
-    Endpoint
+    Domain
   },
 
   data () {
