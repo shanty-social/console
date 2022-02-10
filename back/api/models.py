@@ -233,7 +233,7 @@ class Endpoint(db.Model):
     "Endpoint model representing traffic routing."
     class Meta:
         indexes = [
-            (('host', 'port', 'path', 'domain'), True),
+            (('host', 'http_port', 'https_port', 'path', 'domain'), True),
         ]
 
     name = CharField(null=False, unique=True)
