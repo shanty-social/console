@@ -1,12 +1,10 @@
 import logging
 
-from restless.preparers import FieldsPreparer, SubPreparer
-from flask import request
+from restless.preparers import FieldsPreparer
 from flask_peewee.utils import get_object_or_404
 
 from api.models import Task, TaskLog
-from api.views import BaseResource, TextOrJSONSerializer
-from api.tasks import cron
+from api.views import BaseResource
 
 
 LOGGER = logging.getLogger(__name__)

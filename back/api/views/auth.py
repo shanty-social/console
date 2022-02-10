@@ -1,9 +1,5 @@
-from http import HTTPStatus
-
 from restless.preparers import FieldsPreparer
-from flask import (
-    g, send_from_directory, url_for, redirect, session, request, abort
-)
+from flask import g, url_for, redirect, session, request, abort
 
 from api.app import oauth, update_token, delete_token
 from api.auth import get_logged_in_user
@@ -42,7 +38,8 @@ def oauth_authorize(service_name):
     if service is None:
         abort(404)
     update_token('shanty', service.authorize_access_token())
-    whoami = service.get(WHOAMI).json()
+    # Test token.
+    service.get(WHOAMI).json()
     return redirect(next)
 
 
@@ -70,8 +67,8 @@ def login():
         user = User \
             .select() \
             .where(
-                User.username==username,
-                User.active==True
+                User.username == username,
+                User.active == True  # noqa: E712
             ) \
             .get()
 

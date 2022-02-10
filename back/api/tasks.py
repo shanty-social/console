@@ -98,7 +98,7 @@ class RepeatTimer(threading.Timer):
             try:
                 self.function(*self.args, **self.kwargs)
 
-            except Exception as e:
+            except Exception:
                 LOGGER.exception('Error in timer function.')
 
 

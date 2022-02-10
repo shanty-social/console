@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "84fe61aa01af0c15375644e8a4aee1616604c84a273e85e6d5cb48fc76d72be3"
+            "sha256": "fcd9edba7b6168ff006f15373427f3fc52d827ac61204ad2a09fd550aaeb453e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -393,7 +393,7 @@
             "version": "==1.1.2"
         },
         "upnpy": {
-            "git": "ssh://git@github.com/btimby/upnpy.git",
+            "git": "https://github.com/btimby/upnpy.git",
             "hashes": [
                 "sha256:f43acab6271c25d8073d0e8549cd62a349abdd0a8cb9c21d036bea6132eb632e"
             ],

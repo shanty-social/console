@@ -1,6 +1,6 @@
 import logging
 
-from flask import request, abort
+from flask import abort
 from flask_peewee.utils import get_object_or_404
 
 from restless.preparers import FieldsPreparer
@@ -28,7 +28,7 @@ class DomainResource(BaseResource):
 
     def detail(self, pk):
         "Get single domain."
-        return get_object_or_404(Setting, Setting.name == pk)
+        return get_object_or_404(Domain, Domain.name == pk)
 
     def create(self):
         "Create new domain(s)."

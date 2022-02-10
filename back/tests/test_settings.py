@@ -9,4 +9,4 @@ def test_create_settings_text(authenticated):
     assert r.status_code == 201, 'Invalid status code'
     r = authenticated.post('/api/settings/?format=text', data='bar=BAR')
     assert r.status_code == 201, 'Invalid status code'
-    assert r.get_data() == b'BAR=BAR', 'Name not uppercase'
+    assert r.get_data() == b'BAR="BAR"', 'Name not uppercase'

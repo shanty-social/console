@@ -1,4 +1,3 @@
-import threading
 import logging
 from uuid import uuid4
 
@@ -8,8 +7,7 @@ from pkg_resources import parse_version
 from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    BigIntegerField, TextField, BooleanField, UUIDField, IntegerField,
-    SmallIntegerField,
+    TextField, BooleanField, UUIDField, IntegerField,
 )
 from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
@@ -71,8 +69,8 @@ def _get_models():
     # TODO: can I use globals() or something else here?
     import api.models
     return [
-        m for m in api.models.__dict__.values() \
-            if isinstance(m, type) and issubclass(m, db.Model)
+        m for m in api.models.__dict__.values()
+        if isinstance(m, type) and issubclass(m, db.Model)
     ]
 
 
@@ -107,7 +105,7 @@ class JSONField(TextField):
         return json.loads(val)
 
     def db_value(self, val):
-        return json.dumps(data, cls=MoreTypesJSONEncoder)
+        return json.dumps(val, cls=MoreTypesJSONEncoder)
 
 
 class VersionField(CharField):
@@ -117,7 +115,7 @@ class VersionField(CharField):
 
     def db_value(self, val):
         return str(val)
-    
+
 
 class Setting(db.Model):
     "Store settings."
@@ -130,7 +128,10 @@ class Setting(db.Model):
 
     @staticmethod
     def get_setting(name, group=DEFAULT_SETTING_GROUP):
-        setting = Setting.select().where(Setting.name == name, Setting.group == group).get()
+        setting = Setting \
+            .select() \
+            .where(Setting.name == name, Setting.group == group) \
+            .get()
         return setting.value
 
 
@@ -208,6 +209,7 @@ class User(db.Model):
 
 
 class Domain(db.Model):
+    "Domain model representing dns domain."
     name = CharField(null=False, unique=True)
     type = CharField(null=False, choices=DNS_TYPES)
     provider = CharField(null=False, choices=DNS_PROVIDERS)
@@ -215,11 +217,11 @@ class Domain(db.Model):
 
     @staticmethod
     def get_available_options(provider):
-        options = DNS_OPTIONS.get(provider, [])
+        return DNS_OPTIONS.get(provider, [])
 
     @staticmethod
     def validate_options(provider, values):
-        options = self.get_available_options(provider)
+        options = Domain.get_available_options(provider)
         missing = []
         for option_name in options:
             if option_name not in values:
@@ -228,6 +230,7 @@ class Domain(db.Model):
 
 
 class Endpoint(db.Model):
+    "Endpoint model representing traffic routing."
     class Meta:
         indexes = [
             (('host', 'port', 'path', 'domain'), True),
@@ -235,7 +238,8 @@ class Endpoint(db.Model):
 
     name = CharField(null=False, unique=True)
     host = CharField(null=False)
-    port = IntegerField(null=False)
+    http_port = IntegerField(null=True)
+    https_port = IntegerField(null=True)
     path = CharField(null=False, default='/')
     type = CharField(null=False, choices=ENDPOINT_TYPES)
     domain = ForeignKeyField(Domain, null=False, backref='entrypoints')

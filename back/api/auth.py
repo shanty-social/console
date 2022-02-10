@@ -15,8 +15,8 @@ def get_logged_in_user():
             user = User \
                 .select() \
                 .where(
-                    User.active==True,
-                    User.id==session.get('user_pk')
+                    User.active == True,  # noqa: E712
+                    User.id == session.get('user_pk')
                 ) \
                 .get()
             return user
@@ -44,7 +44,9 @@ def token_auth():
 
 
 def requires_auth(auth_methods=[token_auth, session_auth]):
-    "Decorator that requires one of our auth methods for a function based view."
+    """
+    Decorator that requires one of our auth methods for a function based view.
+    """
     def wrapper(f):
         @wraps(f)
         def inner(*args, **kwargs):

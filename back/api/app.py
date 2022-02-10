@@ -1,4 +1,3 @@
-import os
 import logging
 from pprint import pformat
 
@@ -22,7 +21,7 @@ def fetch_token(name):
     LOGGER.info('Fetching token %s', name)
     setting = Setting.get_or_none(name=f'OAUTH_TOKEN_{name}')
     try:
-        return setting.value        
+        return setting.value
     except AttributeError:
         return None
 

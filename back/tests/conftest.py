@@ -4,6 +4,8 @@ import atexit
 
 import pytest
 
+from flask import g
+
 from api import config
 
 DBFD, DBPATH = tempfile.mkstemp()
@@ -16,7 +18,7 @@ config.TESTING = True
 
 from api import urls
 from api.app import db, app
-from api.models import create_tables, drop_tables
+from api.models import create_tables, drop_tables, User
 
 @pytest.fixture(autouse=True)
 def database():
@@ -38,5 +40,12 @@ def client():
 def authenticated():
     with app.test_client() as client:
         with client.session_transaction() as session:
-            session['user'] = { 'username': 'testuser', 'email': 'test@test.org' }
-        yield client
+            session['authenticated'] = True
+            session['user_pk'] = 1
+        with app.app_context():
+            g.user = User.select().where(User.id==1).get()
+        try:
+            yield client
+
+        finally:
+            g.user = None

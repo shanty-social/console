@@ -1,10 +1,9 @@
-from flask import request, session, send_from_directory
+from flask import request, send_from_directory
 from restless.fl import FlaskResource
 from restless.serializers import Serializer
 from restless.utils import json, MoreTypesJSONEncoder
 from werkzeug.exceptions import HTTPException
 
-from api.app import app
 from api.auth import session_auth, token_auth
 
 
@@ -114,6 +113,7 @@ class BaseResource(FlaskResource):
             raise err
 
         return self.build_error(err)
+
 
 def root():
     """

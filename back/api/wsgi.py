@@ -1,9 +1,7 @@
-import os
 import sys
 import logging
 
-from api import urls
-from api.app import app
+from api.app import app  # noqa: F401
 from api.models import create_tables
 from api.tasks import start_scheduler
 from api.config import LOG_LEVEL
