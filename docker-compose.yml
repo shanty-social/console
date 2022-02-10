@@ -10,16 +10,13 @@ networks:
   private:
 
 services:
-
-  back:
+  console-back:
     image: console/back
     build:
       dockerfile: ./docker/console/Dockerfile
       target: python
       context: ./
-    networks:
-      - private
-      - shared
+    network_mode: host
     extra_hosts:
       - www.shanty.local:192.168.100.200
     volumes:
@@ -36,62 +33,28 @@ services:
       - FLASK_LOG_LEVEL=DEBUG
       - FLASK_DEBUG=true
       - FLASK_HOST=0.0.0.0
-      - FLASK_PORT=8080
+      - FLASK_PORT=8008
       - FLASK_DB_PATH=/var/lib/console/db.sqlite3
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
       - FLASK_SHANTY_REQUEST_TOKEN_URL=http://www.shanty.local:8000/api/oauth2/token/
       - FLASK_SHANTY_API_BASE_URL=http://www.shanty.local:8000/api/
 
-  front:
+  console-front:
     image: console/back
     build:
       dockerfile: ./docker/console/Dockerfile
       target: node
       context: ./
     depends_on:
-      - back
-    networks:
-      - private
+      - console-back
+    network_mode: host
     volumes:
       - ./front:/front:ro
       - ./docker/console/entrypoint-vue.sh:/entrypoint.sh:ro
     ports:
       - 8080:8080
     environment:
-      - FLASK_HOST=back
-      - FLASK_PORT=8080
+      - FLASK_HOST=localhost
+      - FLASK_PORT=8008
       - VUE_HOST=0.0.0.0
       - VUE_PORT=8080
-
-  ddclient:
-    image: console/ddclient
-    build:
-      dockerfile: ./docker/ddclient/Dockerfile
-      context: ./
-    depends_on:
-      - back
-    networks:
-      - private
-    volumes:
-      - ./docker/ddclient/entrypoint.sh:/entrypoint.sh:ro
-      - ./docker/ddclient/ddclient.conf.tmpl:/etc/ddclient/ddclient.conf.tmpl:ro
-    environment:
-      - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
-      - CONSOLE_URL=http://back:8080
-
-  proxy:
-    image: console/proxy
-    build:
-      dockerfile: ./docker/proxy/Dockerfile
-      context: ./
-    depends_on:
-      - back
-    networks:
-      - private
-    volumes:
-      - ./docker/proxy/entrypoint.sh:/entrypoint.sh:ro
-      - ./docker/proxy/nginx.conf.tmpl:/etc/nginx/nginx.conf.tmpl:ro
-    environment:
-      - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
-      - CONSOLE_URL=http://back:8080
-      - PORT=8080

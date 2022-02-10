@@ -21,8 +21,12 @@ from api.app import db
 LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.NullHandler())
 
+DEFAULT_SETTING_GROUP = 'default'
 ENDPOINT_TYPES = [
     'direct', 'tunnel',
+]
+DNS_TYPES = [
+    'static', 'dynamic',
 ]
 DNS_PROVIDERS = [
     'DynDNS.com', 'Zoneedit', 'EasyDNS', 'NameCheap', 'DslReports',
@@ -117,18 +121,23 @@ class VersionField(CharField):
 
 class Setting(db.Model):
     "Store settings."
-    group = CharField(default='default')
+    group = CharField(default=DEFAULT_SETTING_GROUP)
     name = UpperCharField(unique=True)
     value = PickleField(null=False)
 
     def __unicode__(self):
         return f'<Setting {self.group}[{self.name}]={self.value}>'
 
+    @staticmethod
+    def get_setting(name, group=DEFAULT_SETTING_GROUP):
+        setting = Setting.select().where(Setting.name == name, Setting.group == group).get()
+        return setting.value
+
 
 class Task(db.Model):
     "Background task."
     id = UUIDField(primary_key=True, default=uuid4)
-    function = PickleField()
+    function = PickleField(null=False)
     args = PickleField(null=True)
     kwargs = PickleField(null=True)
     result = PickleField(null=True)
@@ -186,9 +195,9 @@ class TaskLog(db.Model):
 
 class User(db.Model):
     "User model for local authentication."
-    username = CharField()
-    password = CharField()
-    name = CharField()
+    username = CharField(null=False, unique=True)
+    password = CharField(null=False)
+    name = CharField(null=True)
     active = BooleanField(default=True)
 
     def set_password(self, password):
@@ -199,14 +208,34 @@ class User(db.Model):
 
 
 class Domain(db.Model):
-    name = CharField()
-    provider = CharField(choices=DNS_PROVIDERS)
+    name = CharField(null=False, unique=True)
+    type = CharField(null=False, choices=DNS_TYPES)
+    provider = CharField(null=False, choices=DNS_PROVIDERS)
     options = JSONField()
+
+    @staticmethod
+    def get_available_options(provider):
+        options = DNS_OPTIONS.get(provider, [])
+
+    @staticmethod
+    def validate_options(provider, values):
+        options = self.get_available_options(provider)
+        missing = []
+        for option_name in options:
+            if option_name not in values:
+                missing.append(option_name)
+        return missing
 
 
 class Endpoint(db.Model):
-    name = CharField()
-    host = CharField()
-    port = IntegerField()
-    type = CharField(choices=ENDPOINT_TYPES)
-    domain = ForeignKeyField(Domain)
+    class Meta:
+        indexes = [
+            (('host', 'port', 'path', 'domain'), True),
+        ]
+
+    name = CharField(null=False, unique=True)
+    host = CharField(null=False)
+    port = IntegerField(null=False)
+    path = CharField(null=False, default='/')
+    type = CharField(null=False, choices=ENDPOINT_TYPES)
+    domain = ForeignKeyField(Domain, null=False, backref='entrypoints')

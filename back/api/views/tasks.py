@@ -71,6 +71,13 @@ class TaskLogResource(BaseResource):
         'message': 'message',
     })
 
-    def list(self, pk):
-        task = get_object_or_404(Task, Task.id == pk)
-        return TaskLog.select().where(TaskLog.task == task).order_by(Task.created.desc())
+    def list(self, task_pk):
+        task = get_object_or_404(Task, Task.id == task_pk)
+        return TaskLog \
+            .select() \
+            .where(TaskLog.task == task) \
+            .order_by(Task.created.desc())
+
+    def detail(self, task_pk, pk):
+        return get_object_or_404(
+            TaskLog, TaskLog.task_id == task_pk, TaskLog.id == pk)

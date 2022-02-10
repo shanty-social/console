@@ -36,7 +36,7 @@ migrate:
 
 .PHONY: run
 run: shared
-	${DOCKER_COMPOSE} up
+	${DOCKER_COMPOSE} up --remove-orphans
 
 
 .PHONY: tarball
@@ -50,7 +50,7 @@ tarball:
 
 .PHONY: clean
 clean:
-	${DOCKER_COMPOSE} rm
+	${DOCKER_COMPOSE} rm --force
 
 
 .PHONY: rebuild

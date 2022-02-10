@@ -7,7 +7,7 @@ name = "pypi"
 flask = "*"
 flask-socketio = "*"
 stopit = "*"
-upnpy = "*"
+upnpy = {git = "https://github.com/btimby/upnpy.git", ref = "exceptions"}
 peewee = "*"
 flask-peewee = "*"
 pycron = "*"

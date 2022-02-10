@@ -1,0 +1,57 @@
+from functools import wraps
+
+from flask import g, session, request, abort
+
+from api.app import app
+from api.models import User
+
+
+def get_logged_in_user():
+    if session.get('authenticated'):
+        if getattr(g, 'user', None):
+            return g.user
+
+        try:
+            user = User \
+                .select() \
+                .where(
+                    User.active==True,
+                    User.id==session.get('user_pk')
+                ) \
+                .get()
+            return user
+
+        except User.DoesNotExist:
+            pass
+
+
+def session_auth():
+    "Check for user in session."
+    return get_logged_in_user() is not None
+
+
+def token_auth():
+    "Check auth token in Authorization: header."
+    token = app.config['AUTH_TOKEN']
+    if not token:
+        return
+    authz = request.headers.get('authorization')
+    if not authz:
+        return
+    if authz.startswith('Bearer '):
+        authz = authz[7:]
+    return authz == token
+
+
+def requires_auth(auth_methods=[token_auth, session_auth]):
+    "Decorator that requires one of our auth methods for a function based view."
+    def wrapper(f):
+        @wraps(f)
+        def inner(*args, **kwargs):
+            for auth_method in auth_methods:
+                if auth_method():
+                    return f(*args, **kwargs)
+            abort(401)
+
+        return inner
+    return wrapper

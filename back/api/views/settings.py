@@ -28,7 +28,6 @@ class SettingResource(BaseResource):
         query = Setting.select()
         if group:
             query = query.where(Setting.group == group)
-        print(list(query))
         return query
 
     def detail(self, pk):
@@ -36,9 +35,12 @@ class SettingResource(BaseResource):
         return get_object_or_404(Setting, Setting.name == pk)
 
     def create(self):
-        "Create a new setting(s)."
-        name = self.data['name'].upper()
-        value = self.data['value']
+        "Create new setting(s)."
+        try:
+            name = self.data['name'].upper()
+            value = self.data['value']
+        except KeyError:
+            abort(400)
         setting, created = Setting.get_or_create(
             name=name, defaults={'value': value})
         if not created:
@@ -48,7 +50,10 @@ class SettingResource(BaseResource):
 
     def create_detail(self, pk):
         "Create single setting."
-        value = self.data['value']
+        try:
+            value = self.data['value']
+        except KeyError:
+            abort(400)
         setting, created = Setting.get_or_create(
             name=pk.upper(), defaults={'value': value})
         if not created:
@@ -61,6 +66,7 @@ class SettingResource(BaseResource):
         setting = get_object_or_404(Setting, Setting.name == pk)
         setting.group = self.data.get('group')
         setting.value = self.data.get('value')
+        setting.save()
         return setting
 
     def delete(self, pk):
