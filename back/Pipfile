@@ -18,6 +18,7 @@ docker = "*"
 uwsgi = "*"
 authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0dd74599191a7726600bfbdda2"}
 wtf-peewee = "*"
+certsign = "*"
 
 [dev-packages]
 flake8 = "*"

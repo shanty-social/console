@@ -8,6 +8,7 @@ from api.views.domains import DomainResource
 from api.views.endpoints import EndpointResource
 from api.views.hosts import HostResource
 from api.views.ports import PortResource
+from api.views.certs import CertResource, acme
 
 
 # API endpoints.
@@ -23,6 +24,7 @@ app.add_url_rule(
 app.add_url_rule(
     '/api/oauth/<string:service_name>/authorize/', methods=['GET'],
     view_func=authorize)
+app.add_url_rule('/.well-know/acme-challenge/', methods=['GET'], view_func=acme)
 HostResource.add_url_rules(app, rule_prefix='/api/hosts/')
 SettingResource.add_url_rules(app, rule_prefix='/api/settings/')
 TaskResource.add_url_rules(app, rule_prefix='/api/tasks/')
@@ -31,3 +33,4 @@ EndpointResource.add_url_rules(app, rule_prefix='/api/endpoints/')
 TaskLogResource.add_url_rules(app, rule_prefix='/api/tasks/<task_pk>/log/')
 UserResource.add_url_rules(app, rule_prefix='/api/users/')
 PortResource.add_url_rules(app, rule_prefix='/api/ports/')
+CertResource.add_url_rules(app, rule_prefix='/api/certs/')
