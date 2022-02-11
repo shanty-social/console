@@ -20,48 +20,115 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.NullHandler())
 
 DEFAULT_SETTING_GROUP = 'default'
-ENDPOINT_TYPES = [
-    'direct', 'tunnel',
-]
-DNS_TYPES = [
-    'static', 'dynamic',
-]
-DNS_PROVIDERS = [
-    'DynDNS.com', 'Zoneedit', 'EasyDNS', 'NameCheap', 'DslReports',
-    'Sitelutions', 'Loopia', 'Noip', 'Freedns', 'ChangeIP', 'CloudFlare',
-    'Google', "Duckdns", 'Freemyip', 'woima.fi', 'Yandex', 'DNS Made Easy',
-    'DonDominio', 'NearlyFreeSpeech.net', 'OVH', 'CloudDNS', 'dinahosting',
-    'Gandi', 'dnsexit', '1984.is',
-]
-DNS_URLS = {
-    'DynDNS.com': 'http://www.dyndns.com',
-    'Zoneedit': 'http://www.zoneedit.com',
-    'EasyDNS': 'http://www.easydns.com',
-    'NameCheap': 'http://www.namecheap.com',
-    'DslReports': 'http://www.dslreports.com',
-    'Sitelutions': 'http://www.sitelutions.com',
-    'Loopia': 'http://www.loopia.se',
-    'Noip': 'http://www.noip.com',
-    'Freedns': 'http://freedns.afraid.org',
-    'ChangeIP': 'http://www.changeip.com',
-    'CloudFlare': 'https://www.cloudflare.com',
-    'Google': 'http://www.google.com/domains',
-    "Duckdns": 'https://duckdns.org',
-    'Freemyip': 'https://freemyip.com',
-    'woima.fi': 'https://woima.fi',
-    'Yandex': 'https://domain.yandex.com',
-    'DNS Made Easy': 'https://dnsmadeeasy.com',
-    'DonDominio': 'https://www.dondominio.com',
-    'NearlyFreeSpeech.net': 'https://nearlyfreespeech.net/services/dns',
-    'OVH': 'https://www.ovh.com',
-    'ClouDNS': 'https://www.cloudns.net',
-    'dinahosting': 'https://dinahosting.com',
-    'Gandi': 'https://gandi.net',
-    'dnsexit': 'https://dnsexit.com/',
-    '1984.is': 'https://www.1984.is/product/freedns/',
+ENDPOINT_TYPES = {
+    'direct': 'direct',
+    'tunnel': 'tunnel',
 }
-DNS_OPTIONS = {
-    'DynDNS.com': ['username', 'password'],
+DNS_TYPES = {
+    'static': 'static',
+    'dynamic': 'dynamic',
+}
+DNS_PROVIDERS = {
+    'DynDNS.com': {
+        'url': 'http://www.dyndns.com',
+        'options': ['username', 'password'],
+    },
+    'Zoneedit': {
+        'url': 'http://www.zoneedit.com',
+        'options': ['username', 'password'],
+    },
+    'EasyDNS': {
+        'url': 'http://www.easydns.com',
+        'options': ['username', 'password'],
+    },
+    'NameCheap': {
+        'url': 'http://www.namecheap.com',
+        'options': ['username', 'password'],
+    },
+    'DslReports': {
+        'url': 'http://www.dslreports.com',
+        'options': ['username', 'password'],
+    },
+    'Sitelutions': {
+        'url': 'http://www.sitelutions.com',
+        'options': ['username', 'password'],
+    },
+    'Loopia': {
+        'url': 'http://www.loopia.se',
+        'options': ['username', 'password'],
+    },
+    'Noip': {
+        'url': 'http://www.noip.com',
+        'options': ['username', 'password'],
+    },
+    'Freedns': {
+        'url': 'http://freedns.afraid.org',
+        'options': ['username', 'password'],
+    },
+    'ChangeIP': {
+        'url': 'http://www.changeip.com',
+        'options': ['username', 'password'],
+    },
+    'CloudFlare': {
+        'url': 'https://www.cloudflare.com',
+        'options': ['username', 'password'],
+    },
+    'Google': {
+        'url': 'http://www.google.com/domains',
+        'options': ['username', 'password'],
+    },
+    "Duckdns": {
+        'url': 'https://duckdns.org',
+        'options': ['username', 'password'],
+    },
+    'Freemyip': {
+        'url': 'https://freemyip.com',
+        'options': ['username', 'password'],
+    },
+    'woima.fi': {
+        'url': 'https://woima.fi',
+        'options': ['username', 'password'],
+    },
+    'Yandex': {
+        'url': 'https://domain.yandex.com',
+        'options': ['username', 'password'],
+    },
+    'DNS Made Easy': {
+        'url': 'https://dnsmadeeasy.com',
+        'options': ['username', 'password'],
+    },
+    'DonDominio': {
+        'url': 'https://www.dondominio.com',
+        'options': ['username', 'password'],
+    },
+    'NearlyFreeSpeech.net': {
+        'url': 'https://nearlyfreespeech.net/services/dns',
+        'options': ['username', 'password'],
+    },
+    'OVH': {
+        'url': 'https://www.ovh.com',
+        'options': ['username', 'password'],
+    },
+    'ClouDNS': {
+        'url': 'https://www.cloudns.net',
+        'options': ['username', 'password'],
+    },
+    'dinahosting': {
+        'url': 'https://dinahosting.com',
+        'options': ['username', 'password'],
+    },
+    'Gandi': {
+        'url': 'https://gandi.net',
+        'options': ['username', 'password'],
+    },
+    'dnsexit': {
+        'url': 'https://dnsexit.com/',
+        'options': ['username', 'password'],
+    },
+    '1984.is': {
+        'url': 'https://www.1984.is/product/freedns/',
+        'options': ['username', 'password'],
+    },
 }
 
 
@@ -211,13 +278,17 @@ class User(db.Model):
 class Domain(db.Model):
     "Domain model representing dns domain."
     name = CharField(null=False, unique=True)
-    type = CharField(null=False, choices=DNS_TYPES)
-    provider = CharField(null=False, choices=DNS_PROVIDERS)
+    type = CharField(null=False, choices=DNS_TYPES.items())
+    provider = CharField(
+        null=False, choices=[
+            (name, name) for name in DNS_PROVIDERS.keys()
+        ])
     options = JSONField()
 
     @staticmethod
     def get_available_options(type, provider):
-        options = DNS_OPTIONS.get(provider, [])[:]
+        # NOTE: Make a copy, otherwise "ip address" is appended.
+        options = list(DNS_PROVIDERS.get(provider, {}).get('options', []))
         if type == 'static':
             options.append('ip address')
         return options
@@ -232,8 +303,10 @@ class Endpoint(db.Model):
 
     name = CharField(null=False, unique=True)
     host = CharField(null=False)
-    http_port = IntegerField(null=True)
-    https_port = IntegerField(null=True)
+    http_port_external = IntegerField(null=True)
+    http_port_internal = IntegerField(null=True)
+    https_port_external = IntegerField(null=True)
+    https_port_internal = IntegerField(null=True)
     path = CharField(null=False, default='/')
-    type = CharField(null=False, choices=ENDPOINT_TYPES)
+    type = CharField(null=False, choices=ENDPOINT_TYPES.items())
     domain = ForeignKeyField(Domain, null=False, backref='entrypoints')

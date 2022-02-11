@@ -6,19 +6,18 @@ name = "pypi"
 [packages]
 flask = "*"
 flask-socketio = "*"
+flask-caching = "*"
+flask-peewee = "*"
+flask-session = "*"
 stopit = "*"
 upnpy = {git = "https://github.com/btimby/upnpy.git", ref = "exceptions"}
 peewee = "*"
-flask-peewee = "*"
 pycron = "*"
 restless = "*"
 docker = "*"
-simple-websocket = "*"
-flask-caching = "*"
 uwsgi = "*"
-flask-oauthlib = "*"
 authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0dd74599191a7726600bfbdda2"}
-flask-session = "*"
+wtf-peewee = "*"
 
 [dev-packages]
 flake8 = "*"

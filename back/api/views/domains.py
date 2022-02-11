@@ -1,17 +1,22 @@
 import logging
 
-from flask import abort, request
+from flask import request
 from flask_peewee.utils import get_object_or_404
 
 from restless.preparers import FieldsPreparer
 from restless.resources import skip_prepare
 
-from api.views import BaseResource, TextOrJSONSerializer
+from wtfpeewee.orm import model_form
+
+from api.views import BaseResource, Form, abort
 from api.models import Domain, DNS_PROVIDERS
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+
+DomainForm = model_form(Domain, base_class=Form)
 
 
 class DomainResource(BaseResource):
@@ -21,7 +26,6 @@ class DomainResource(BaseResource):
         'provider': 'provider',
         'options': 'options',
     })
-    serializer = TextOrJSONSerializer()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,7 +40,8 @@ class DomainResource(BaseResource):
 
     @classmethod
     def add_url_rules(cls, app, rule_prefix, endpoint_prefix=None):
-        super().add_url_rules(app, rule_prefix, endpoint_prefix=endpoint_prefix)
+        super().add_url_rules(
+            app, rule_prefix, endpoint_prefix=endpoint_prefix)
         app.add_url_rule(
             rule_prefix + 'options/',
             endpoint=cls.build_endpoint_name('options', endpoint_prefix),
@@ -60,61 +65,35 @@ class DomainResource(BaseResource):
 
     def create(self):
         "Create new domain(s)."
-        try:
-            name = self.data['name']
-            type = self.data['type']
-            provider = self.data['provider']
-            options = self.data['options']
-        except KeyError:
-            abort(400)
-        for option in Domain.get_available_options(type, provider):
-            if not options.get(option):
-                abort(400)
+        form = DomainForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
+        for option in Domain.get_available_options(form.type.data,
+                                                   form.provider.data):
+            if not form.options.data.get(option):
+                abort(400, {f'options.{option}': 'required'})
         domain, created = Domain.get_or_create(
-            name=name, defaults={
-                'type': type,
-                'provider': provider,
-                'options': options
+            name=form.name.data, defaults={
+                'type': form.type.data,
+                'provider': form.provider.data,
+                'options': form.options.data
             })
         if not created:
-            domain.provider = provider
-            domain.options = options
-            domain.save()
-        return domain
-
-    def create_detail(self, pk):
-        "Create single domain."
-        try:
-            type = self.data['type']
-            provider = self.data['provider']
-            options = self.data['options']
-        except KeyError:
-            abort(400)
-        for option in Domain.get_available_options(type, provider):
-            if not options.get(option):
-                abort(400)
-        domain, created = Domain.get_or_create(
-            name=pk, defaults={
-                'type': type,
-                'provider': provider,
-                'options': options
-            })
-        if not created:
-            domain.provider = provider
-            domain.options = options
+            form.populate_obj(domain)
             domain.save()
         return domain
 
     def update(self, pk):
         "Update single domain."
         domain = get_object_or_404(Domain, Domain.name == pk)
-        domain.name = self.data.get('name')
-        domain.type = type = self.data.get('type')
-        domain.provider = provider = self.data.get('provider')
-        domain.options = self.data.get('options')
-        for option in Domain.get_available_options(type, provider):
-            if not domain.options.get(option):
-                abort(400)
+        form = DomainForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
+        for option in Domain.get_available_options(form.type.data,
+                                                   form.provider.data):
+            if not form.options.data.get(option):
+                abort(400, {f'options.{option}': 'required'})
+        form.populate_obj(domain)
         domain.save()
         return domain
 
@@ -128,8 +107,9 @@ class DomainResource(BaseResource):
         try:
             type = request.args['type']
             provider = request.args['provider']
-        except KeyError:
-            abort(400)
+
+        except KeyError as e:
+            abort(400, {e.args[0]: 'required'})
         return Domain.get_available_options(type, provider)
 
     @skip_prepare

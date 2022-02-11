@@ -25,6 +25,28 @@ def get_logged_in_user():
             pass
 
 
+def log_in_user(username, password):
+    try:
+        user = User.get(
+            User.username == username, User.active == True)  # noqa: E712
+
+    except User.DoesNotExist:
+        abort(401)
+
+    if not user.check_password(password):
+        abort(401)
+
+    session['authenticated'] = True
+    session['user_pk'] = user._pk
+    g.user = user
+    return user
+
+
+def log_out_user():
+    session.clear()
+    g.user = None
+
+
 def session_auth():
     "Check for user in session."
     return get_logged_in_user() is not None

@@ -6,6 +6,7 @@ from flask_peewee.utils import get_object_or_404
 
 from api.models import Setting
 from api.views import BaseResource, TextOrJSONSerializer
+from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -20,6 +21,16 @@ class SettingResource(BaseResource):
         'value': 'value',
     })
     serializer = TextOrJSONSerializer()
+
+    def is_authenticated(self):
+        # Allow read access with token auth.
+        if super().is_authenticated():
+            return True
+
+        if self.request_method() == 'GET' and token_auth():
+            return True
+
+        return False
 
     def list(self):
         "List all settings."

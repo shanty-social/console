@@ -1,10 +1,14 @@
-from flask import request, send_from_directory
+from flask import (
+    make_response, jsonify, request, send_from_directory, abort as _abort
+)
 from restless.fl import FlaskResource
-from restless.serializers import Serializer
-from restless.utils import json, MoreTypesJSONEncoder
+from restless.serializers import Serializer, JSONSerializer
+from restless.utils import json
 from werkzeug.exceptions import HTTPException
 
-from api.auth import session_auth, token_auth
+from wtforms import Form as _Form
+
+from api.auth import session_auth
 
 
 def to_bool(s):
@@ -54,7 +58,40 @@ def _from_text(text):
     }
 
 
+def abort(code, obj=None):
+    if obj:
+        _abort(make_response(jsonify(obj), code))
+    else:
+        _abort(code)
+
+
+class MultiDict(dict):
+    "MultiDict to satisfy Form."
+
+    def getlist(self, key):
+        "Get list of values for given key."
+        val = self[key]
+        if not isinstance(val, list):
+            val = [val]
+        return val
+
+    def getall(self, key):
+        "Get value as a list."
+        return [self[key]]
+
+
+class Form(_Form):
+    "Form class allowing dictionary as data."
+
+    def __init__(self, data, *args, **kwargs):
+        super().__init__(MultiDict(data), *args, **kwargs)
+
+
 class TextOrJSONSerializer(Serializer):
+    "Serialize to json or text."
+
+    json_serializer = JSONSerializer()
+
     def deserialize(self, body):
         ct = request.args.get('format', 'json')
         if body is None:
@@ -62,7 +99,7 @@ class TextOrJSONSerializer(Serializer):
         if ct == 'text':
             return _from_text(body.decode('utf-8'))
         else:
-            return json.loads(body)
+            return self.json_serializer.deserialize(body)
 
     def serialize(self, data):
         ct = request.args.get('format', 'json')
@@ -71,7 +108,7 @@ class TextOrJSONSerializer(Serializer):
         if ct == 'text':
             return _to_text(data)
         else:
-            return json.dumps(data, cls=MoreTypesJSONEncoder)
+            return self.json_serializer.serialize(data)
 
 
 class BaseResource(FlaskResource):
@@ -80,7 +117,6 @@ class BaseResource(FlaskResource):
     # Auth methods can be defined on per-view basis, these are defaults.
     auth_methods = [
         session_auth,
-        token_auth,
     ]
 
     def is_authenticated(self):
@@ -120,7 +156,7 @@ class BaseResource(FlaskResource):
             inst = cls(*init_args, **init_kwargs)
             inst.request = request
             return inst.handle(name, *args, **kwargs)
-        
+
         return _wrapper
 
 

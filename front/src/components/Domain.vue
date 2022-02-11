@@ -70,7 +70,7 @@ export default {
     axios
       .get('/api/domains/providers/')
       .then((r) => {
-        this.providers = r.data
+        this.providers = Object.keys(r.data)
       })
       .catch(console.error)
   },
@@ -86,14 +86,12 @@ export default {
       axios
         .get('/api/domains/options/', {params: {type, provider}})
         .then((r) => {
-          const options = {}
-
           // Update options and preserve values.
+          const options = {}
           for (const name of r.data) {
             options[name] = this.options[name]
           }
-
-          this.options = options;
+          this.options = options
         })
         .catch(console.error)
     },

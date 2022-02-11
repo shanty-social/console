@@ -5,14 +5,17 @@ import docker
 import upnpy
 from upnpy.exceptions import ActionNotFoundError
 
-from flask import abort, jsonify
 from flask_peewee.utils import get_object_or_404
 
 from restless.preparers import FieldsPreparer, SubPreparer
+from restless.resources import skip_prepare
+
+import wtforms
+from wtforms.validators import InputRequired
+from wtfpeewee.orm import model_form
 
 from api.app import oauth
-from api.auth import requires_auth
-from api.views import BaseResource, TextOrJSONSerializer
+from api.views import BaseResource, TextOrJSONSerializer, Form, abort
 from api.models import Endpoint, Domain
 from api.config import DOCKER_SOCKET_PATH
 from api.tasks import cron
@@ -22,6 +25,17 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 SERVICE_PORTS = [80, 443]
+
+
+EndpointForm = model_form(Endpoint, base_class=Form)
+
+
+class OpenPortForm(Form):
+    host = wtforms.StringField('Host', [InputRequired()])
+    http_port_internal = wtforms.IntegerField('Http port', [InputRequired()])
+    http_port_external = wtforms.IntegerField('Http port', [InputRequired()])
+    https_port_internal = wtforms.IntegerField('Https port', [InputRequired()])
+    https_port_external = wtforms.IntegerField('Https port', [InputRequired()])
 
 
 def _get_gateway():
@@ -108,39 +122,6 @@ def _check_endpoint_ports():
                 gateway, service, 443, endpoint.https_port, endpoint.host)
 
 
-@requires_auth()
-def open_port(host, http_port=80, https_port=443):
-    "Open port in router using uPNP."
-    try:
-        gateway, service = _get_gateway()
-
-    except Exception:
-        LOGGER.exception('Error getting gateway')
-        abort(503)
-
-    forwards = []
-    response = {
-        'gateway': gateway.host,
-        'forwards': forwards,
-    }
-    src_ports, dst_ports = SERVICE_PORTS, [http_port, https_port]
-    for src_port, dst_port in zip(src_ports, dst_ports):
-        destination = f'{host}:{dst_port}'
-        forwards.append({'port': src_port, 'destination': destination})
-        LOGGER.debug('Adding port mapping for %s', destination)
-        _open_port(gateway, service, src_port, dst_port, host)
-    return jsonify(response)
-
-
-@requires_auth()
-def check_port():
-    "Check if port is open (externally)."
-    r = oauth.shanty.post(
-        '/api/utils/port_scan/', {'ports': SERVICE_PORTS})
-
-    return jsonify(r.json())
-
-
 class HostResource(BaseResource):
     "Manage docker hosts."
     preparer = FieldsPreparer(fields={
@@ -184,6 +165,34 @@ class EndpointResource(BaseResource):
     })
     serializer = TextOrJSONSerializer()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.http_methods.update({
+            'open_port': {
+                'POST': 'open_port',
+            },
+            'check_port': {
+                'POST': 'check_port',
+            },
+        })
+
+    @classmethod
+    def add_url_rules(cls, app, rule_prefix, endpoint_prefix=None):
+        super().add_url_rules(
+            app, rule_prefix, endpoint_prefix=endpoint_prefix)
+        app.add_url_rule(
+            rule_prefix + 'open_port/',
+            endpoint=cls.build_endpoint_name('open_port', endpoint_prefix),
+            view_func=cls.as_view('open_port'),
+            methods=['POST']
+        )
+        app.add_url_rule(
+            rule_prefix + 'check_port/',
+            endpoint=cls.build_endpoint_name('check_port', endpoint_prefix),
+            view_func=cls.as_view('check_port'),
+            methods=['POST']
+        )
+
     def list(self):
         "List all endpoints."
         return Endpoint.select()
@@ -194,71 +203,34 @@ class EndpointResource(BaseResource):
 
     def create(self):
         "Create new endpoint(s)."
-        try:
-            name = self.data['name']
-            host = self.data['host']
-            http_port = self.data['http_port']
-            https_port = self.data['https_port']
-            path = self.data['path']
-            type = self.data['type']
-            domain_name = self.data['domain']
-        except KeyError:
-            abort(400)
-        domain = get_object_or_404(Domain, Domain.name == domain_name)
+        form = EndpointForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
+        domain = get_object_or_404(Domain, Domain.name == form.domain.data)
         endpoint, created = Endpoint.get_or_create(
-            name=name, defaults={'host': host, 'http_port': http_port,
-                                 'https_port': https_port, 'path': path,
-                                 'type': type, 'domain': domain})
+            name=form.name.data, defaults={
+                'host': form.host.data,
+                'http_port': form.http_port.data,
+                'https_port': form.https_port.data,
+                'path': form.path.data,
+                'type': form.type.data,
+                'domain': domain,
+            }
+        )
         if not created:
-            endpoint.host = host
-            endpoint.http_port = http_port
-            endpoint.https_port = https_port
-            endpoint.path = path
-            endpoint.type = type
-            endpoint.domain = domain
-            endpoint.save()
-        return endpoint
-
-    def create_detail(self, pk):
-        "Create single endpoint."
-        try:
-            host = self.data['host']
-            http_port = self.data['http_port']
-            https_port = self.data['https_port']
-            path = self.data['path']
-            type = self.data['type']
-            domain_name = self.data['domain']
-        except KeyError:
-            abort(400)
-        domain = get_object_or_404(Domain, Domain.name == domain_name)
-        endpoint, created = Endpoint.get_or_create(
-            name=name, defaults={'host': host, 'http_port': http_port,
-                                 'https_port': https_port, 'path': path,
-                                 'type': type, 'domain': domain})
-        if not created:
-            endpoint.host = host
-            endpoint.http_port = http_port
-            endpoint.https_port = https_port
-            endpoint.path = path
-            endpoint.type = type
-            endpoint.domain = domain
+            form.populate_obj(endpoint)
             endpoint.save()
         return endpoint
 
     def update(self, pk):
         "Update single endpoint."
         endpoint = get_object_or_404(Endpoint, Endpoint.name == pk)
-        domain_name = self.data.get('domain')
-        endpoint.host = self.data.get('host')
-        endpoint.http_port = self.data.get('http_port')
-        endpoint.https_port = self.data.get('https_port')
-        endpoint.path = self.data.get('path')
-        endpoint.type = self.data.get('type')
-        if domain_name:
-            endpoint.domain = Domain \
-                .select() \
-                .where(Domain.name == domain_name) \
-                .get()
+        form = EndpointForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
+        form.populate_obj(endpoint)
+        if form.domain.data:
+            endpoint.domain = Domain.get(Domain.name == form.domain.data)
         endpoint.save()
         return endpoint
 
@@ -266,3 +238,42 @@ class EndpointResource(BaseResource):
         "Delete single endpoint."
         endpoint = get_object_or_404(Endpoint, Endpoint.name == pk)
         endpoint.delete_instance()
+
+    @skip_prepare
+    def open_port(self):
+        "Open port in router using uPNP."
+        form = OpenPortForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
+        try:
+            gateway, service = _get_gateway()
+
+        except Exception:
+            LOGGER.exception('Error getting gateway')
+            abort(503)
+
+        forwards = []
+        response = {
+            'gateway': gateway.host,
+            'forwards': forwards,
+        }
+        src_ports = [
+            form.http_port_external.data, form.https_port_external.data
+        ]
+        dst_ports = [
+            form.http_port_internal.data, form.https_port_internal.data
+        ]
+        for src_port, dst_port in zip(src_ports, dst_ports):
+            destination = f'{form.host.data}:{dst_port}'
+            forwards.append({'port': src_port, 'destination': destination})
+            LOGGER.debug('Adding port mapping for %s', destination)
+            _open_port(gateway, service, src_port, dst_port, form.host.data)
+        return response
+
+    @skip_prepare
+    def check_port(self):
+        "Check if port is open (externally)."
+        r = oauth.shanty.post(
+            '/api/utils/port_scan/', {'ports': SERVICE_PORTS})
+
+        return r.json()
