@@ -1,16 +1,20 @@
 import logging
 
 from restless.preparers import FieldsPreparer
-from flask import request, abort
+from flask import request
 from flask_peewee.utils import get_object_or_404
 
+from wtfpeewee.orm import model_form
+
 from api.models import Setting
-from api.views import BaseResource, TextOrJSONSerializer
+from api.views import BaseResource, TextOrJSONSerializer, Form, abort
 from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+SettingForm = model_form(Setting, base_class=Form)
 
 
 class SettingResource(BaseResource):
@@ -46,36 +50,35 @@ class SettingResource(BaseResource):
 
     def create(self):
         "Create new setting(s)."
-        try:
-            name = self.data['name'].upper()
-            value = self.data['value']
-        except KeyError:
-            abort(400)
+        form = SettingForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
         setting, created = Setting.get_or_create(
-            name=name, defaults={'value': value})
+            name=form.name.data.upper(), defaults={'value': form.value.data})
         if not created:
-            setting.value = value
+            form.populate_obj(setting)
             setting.save()
         return setting
 
     def create_detail(self, pk):
         "Create single setting."
-        try:
-            value = self.data['value']
-        except KeyError:
-            abort(400)
+        form = SettingForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
         setting, created = Setting.get_or_create(
-            name=pk.upper(), defaults={'value': value})
+            name=pk.upper(), defaults={'value': form.value.data})
         if not created:
-            setting.value = value
+            form.populate_obj(setting)
             setting.save()
         return setting
 
     def update(self, pk):
         "Update single setting."
         setting = get_object_or_404(Setting, Setting.name == pk)
-        setting.group = self.data.get('group')
-        setting.value = self.data.get('value')
+        form = SettingForm(self.data)
+        if not form.validate():
+            abort(400, form.errors)
+        form.populate_obj(setting)
         setting.save()
         return setting
 
