@@ -13,13 +13,10 @@ def get_logged_in_user():
             return g.user
 
         try:
-            user = User \
-                .select() \
-                .where(
+            user = User.get(
                     User.active == True,  # noqa: E712
                     User.id == session.get('user_pk')
-                ) \
-                .get()
+                )
             return user
 
         except User.DoesNotExist:

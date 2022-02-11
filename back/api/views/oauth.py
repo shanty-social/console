@@ -4,9 +4,6 @@ from api.app import oauth, update_token, delete_token
 from api.auth import requires_auth
 
 
-WHOAMI = '/api/users/whoami/'
-
-
 @requires_auth()
 def start(service_name):
     # Kick off OAuth2 authorization.
@@ -16,7 +13,7 @@ def start(service_name):
         abort(404)
     if service.token:
         # Validate token.
-        r = oauth.shanty.get(WHOAMI)
+        r = oauth.shanty.get('/api/users/whoami/')
         if r.status_code == 200:
             return redirect(next)
         # Delete invalid token.
@@ -38,7 +35,7 @@ def authorize(service_name):
         abort(404)
     update_token('shanty', service.authorize_access_token())
     # Test token.
-    service.get(WHOAMI).json()
+    service.get('/api/users/whoami/').json()
     return redirect(next)
 
 
