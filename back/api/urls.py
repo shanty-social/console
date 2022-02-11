@@ -5,7 +5,9 @@ from api.views.users import UserResource
 from api.views.settings import SettingResource  # noqa: E402
 from api.views.tasks import TaskResource, TaskLogResource  # noqa: E402
 from api.views.domains import DomainResource
-from api.views.endpoints import HostResource, EndpointResource
+from api.views.endpoints import EndpointResource
+from api.views.hosts import HostResource
+from api.views.ports import PortResource
 
 
 # API endpoints.
@@ -28,3 +30,4 @@ DomainResource.add_url_rules(app, rule_prefix='/api/domains/')
 EndpointResource.add_url_rules(app, rule_prefix='/api/endpoints/')
 TaskLogResource.add_url_rules(app, rule_prefix='/api/tasks/<task_pk>/log/')
 UserResource.add_url_rules(app, rule_prefix='/api/users/')
+PortResource.add_url_rules(app, rule_prefix='/api/ports/')
