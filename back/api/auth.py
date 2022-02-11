@@ -7,6 +7,7 @@ from api.models import User
 
 
 def get_logged_in_user():
+    "Get currently logged in user."
     if session.get('authenticated'):
         if getattr(g, 'user', None):
             return g.user
@@ -26,6 +27,7 @@ def get_logged_in_user():
 
 
 def log_in_user(username, password):
+    "Log user in."
     try:
         user = User.get(
             User.username == username, User.active == True)  # noqa: E712
@@ -43,6 +45,7 @@ def log_in_user(username, password):
 
 
 def log_out_user():
+    "Log user out."
     session.clear()
     g.user = None
 
