@@ -6,10 +6,11 @@ from restless.preparers import FieldsPreparer, SubPreparer
 
 from wtfpeewee.orm import model_form
 
-from api.views import BaseResource, TextOrJSONSerializer, Form, abort
+from api.views import BaseResource, Form, abort
 from api.models import Endpoint, Domain
 from api.tasks import cron
 from api.views.ports import _open_port, _get_gateway
+from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +41,6 @@ def _check_endpoint_ports():
 domain_preparer = FieldsPreparer(fields={
     'name': 'name',
     'provider': 'provider',
-    'options': 'options',
 })
 
 
@@ -49,17 +49,38 @@ class EndpointResource(BaseResource):
     preparer = FieldsPreparer(fields={
         'name': 'name',
         'host': 'host',
-        'http_port': 'http_port',
-        'https_port': 'https_port',
+        'http_port_external': 'http_port_external',
+        'http_port_internal': 'http_port_internal',
+        'https_port_external': 'https_port_external',
+        'https_port_internal': 'https_port_internal',
         'path': 'path',
         'type': 'type',
         'domain': SubPreparer('domain', domain_preparer),
     })
-    serializer = TextOrJSONSerializer()
+
+    def is_authenticated(self):
+        # Allow read access with token auth.
+        if super().is_authenticated():
+            return True
+
+        if self.request_method() == 'GET' and token_auth():
+            return True
+
+        return False
 
     def list(self):
         "List all endpoints."
-        return Endpoint.select()
+        type = request.args.get('type')
+        domain_name = request.args.get('domain')
+        host = request.args.get('host')
+        endpoints = Endpoint.select()
+        if type:
+            endpoints = endpoints.where(Endpoint.type == type)
+        if domain_name:
+            endpoints = endpoints.join(Domains).where(Domain.name == domain_name)
+        if host:
+            endpoints = endpoints.where(Endpoint.host == host)
+        return endpoints
 
     def detail(self, pk):
         "Retrieve single endpoint."
@@ -67,18 +88,20 @@ class EndpointResource(BaseResource):
 
     def create(self):
         "Create new endpoint(s)."
+        self.data['domain'] = get_object_or_404(Domain, Domain.name == self.data.get('domain'))
         form = EndpointForm(self.data)
         if not form.validate():
             abort(400, form.errors)
-        domain = get_object_or_404(Domain, Domain.name == form.domain.data)
         endpoint, created = Endpoint.get_or_create(
             name=form.name.data, defaults={
                 'host': form.host.data,
-                'http_port': form.http_port.data,
-                'https_port': form.https_port.data,
+                'http_port_external': form.http_port_external.data,
+                'http_port_internal': form.http_port_internal.data,
+                'https_port_external': form.https_port_external.data,
+                'https_port_internal': form.https_port_internal.data,
                 'path': form.path.data,
                 'type': form.type.data,
-                'domain': domain,
+                'domain': form.domain.data,
             }
         )
         if not created:

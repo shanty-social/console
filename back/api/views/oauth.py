@@ -2,6 +2,12 @@ from flask import url_for, redirect, session, request, abort
 
 from api.app import oauth, update_token, delete_token
 from api.auth import requires_auth
+from api.tasks import cron
+
+
+@cron('*/5 * * * *')
+def refresh_tokens():
+    "Refresh oauth tokens."
 
 
 @requires_auth()

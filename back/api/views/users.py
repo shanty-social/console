@@ -32,43 +32,11 @@ user_preparer = FieldsPreparer(fields={
 class UserResource(BaseResource):
     "Manage Users."
     preparer = user_preparer
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.http_methods.update({
-            'login': {
-                'POST': 'login',
-            },
-            'logout': {
-                'POST': 'logout',
-            },
-            'whoami': {
-                'GET': 'whoami',
-            },
-        })
-
-    @classmethod
-    def add_url_rules(cls, app, rule_prefix, endpoint_prefix=None):
-        super().add_url_rules(
-            app, rule_prefix, endpoint_prefix=endpoint_prefix)
-        app.add_url_rule(
-            rule_prefix + 'login/',
-            endpoint=cls.build_endpoint_name('login', endpoint_prefix),
-            view_func=cls.as_view('login'),
-            methods=['POST']
-        )
-        app.add_url_rule(
-            rule_prefix + 'logout/',
-            endpoint=cls.build_endpoint_name('logout', endpoint_prefix),
-            view_func=cls.as_view('logout'),
-            methods=['POST']
-        )
-        app.add_url_rule(
-            rule_prefix + 'whoami/',
-            endpoint=cls.build_endpoint_name('whoami', endpoint_prefix),
-            view_func=cls.as_view('whoami'),
-            methods=['GET']
-        )
+    extra_actions = {
+        'login': ['POST'],
+        'logout': ['POST'],
+        'whoami': ['GET'],
+    }
 
     def is_authenticated(self):
         if self.endpoint == 'login':
@@ -76,7 +44,11 @@ class UserResource(BaseResource):
         return super().is_authenticated()
 
     def list(self):
-        return User.select()
+        active = request.args.get('active')
+        users = User.select()
+        if active:
+            users = users.where(User.active == True)
+        return users
 
     def detail(self, pk):
         return User.get(User.username == pk)

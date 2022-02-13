@@ -29,105 +29,23 @@ DNS_TYPES = {
     'dynamic': 'dynamic',
 }
 DNS_PROVIDERS = {
-    'DynDNS.com': {
-        'url': 'http://www.dyndns.com',
-        'options': ['username', 'password'],
-    },
-    'Zoneedit': {
-        'url': 'http://www.zoneedit.com',
-        'options': ['username', 'password'],
-    },
-    'EasyDNS': {
-        'url': 'http://www.easydns.com',
-        'options': ['username', 'password'],
-    },
-    'NameCheap': {
-        'url': 'http://www.namecheap.com',
-        'options': ['username', 'password'],
-    },
-    'DslReports': {
-        'url': 'http://www.dslreports.com',
-        'options': ['username', 'password'],
-    },
-    'Sitelutions': {
-        'url': 'http://www.sitelutions.com',
-        'options': ['username', 'password'],
-    },
-    'Loopia': {
-        'url': 'http://www.loopia.se',
-        'options': ['username', 'password'],
-    },
-    'Noip': {
-        'url': 'http://www.noip.com',
-        'options': ['username', 'password'],
-    },
-    'Freedns': {
+    'afraid': {
         'url': 'http://freedns.afraid.org',
-        'options': ['username', 'password'],
+        'options': ['User', 'Password'],
+        'nameservers': 'ns1.afraid.org,ns2.afraid.org,ns3.afraid.org,ns4.afraid.org',
     },
-    'ChangeIP': {
-        'url': 'http://www.changeip.com',
-        'options': ['username', 'password'],
-    },
-    'CloudFlare': {
+    'cloudflare': {
         'url': 'https://www.cloudflare.com',
-        'options': ['username', 'password'],
+        'options': ['API_Token', 'Email', 'Zone'],
     },
-    'Google': {
-        'url': 'http://www.google.com/domains',
-        'options': ['username', 'password'],
+    'hurricane': {
+        'url': 'https://dns.he.net',
+        'options': ['Password'],
     },
-    "Duckdns": {
-        'url': 'https://duckdns.org',
-        'options': ['username', 'password'],
-    },
-    'Freemyip': {
-        'url': 'https://freemyip.com',
-        'options': ['username', 'password'],
-    },
-    'woima.fi': {
-        'url': 'https://woima.fi',
-        'options': ['username', 'password'],
-    },
-    'Yandex': {
-        'url': 'https://domain.yandex.com',
-        'options': ['username', 'password'],
-    },
-    'DNS Made Easy': {
-        'url': 'https://dnsmadeeasy.com',
-        'options': ['username', 'password'],
-    },
-    'DonDominio': {
-        'url': 'https://www.dondominio.com',
-        'options': ['username', 'password'],
-    },
-    'NearlyFreeSpeech.net': {
-        'url': 'https://nearlyfreespeech.net/services/dns',
-        'options': ['username', 'password'],
-    },
-    'OVH': {
-        'url': 'https://www.ovh.com',
-        'options': ['username', 'password'],
-    },
-    'ClouDNS': {
-        'url': 'https://www.cloudns.net',
-        'options': ['username', 'password'],
-    },
-    'dinahosting': {
-        'url': 'https://dinahosting.com',
-        'options': ['username', 'password'],
-    },
-    'Gandi': {
-        'url': 'https://gandi.net',
-        'options': ['username', 'password'],
-    },
-    'dnsexit': {
-        'url': 'https://dnsexit.com/',
-        'options': ['username', 'password'],
-    },
-    '1984.is': {
-        'url': 'https://www.1984.is/product/freedns/',
-        'options': ['username', 'password'],
+    'strato': {
+        'url': 'https://www.strato.com',
+        'options': ['User', 'Password'],
+        'nameservers': 'ns1.strato.de,ns2.strato.de,ns4.strato.de',
     },
 }
 

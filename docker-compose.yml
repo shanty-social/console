@@ -23,8 +23,9 @@ services:
       - ./back:/app:ro
       - ./docker/console/entrypoint-app.sh:/entrypoint.sh:ro
       - /var/run/docker.sock:/var/run/sockets/docker.sock
+#      - /tmp/wpa_sock:/var/run/sockets
+      - /tmp/certs:/var/lib/certs/
       - db:/var/lib/console/
-      - /tmp/wpa_sock:/var/run/sockets
     environment:
       - AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
       - FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
@@ -38,6 +39,7 @@ services:
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
       - FLASK_SHANTY_REQUEST_TOKEN_URL=http://www.shanty.local:8000/api/oauth2/token/
       - FLASK_SHANTY_API_BASE_URL=http://www.shanty.local:8000/api/
+      - CERT_DIR=/var/lib/certs
 
   console-front:
     image: console/back

@@ -10,6 +10,7 @@ from wtfpeewee.orm import model_form
 
 from api.views import BaseResource, Form, abort
 from api.models import Domain, DNS_PROVIDERS
+from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -26,38 +27,28 @@ class DomainResource(BaseResource):
         'provider': 'provider',
         'options': 'options',
     })
+    extra_actions = {
+        'options': ['GET'],
+        'providers': ['GET'],
+    }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.http_methods.update({
-            'options': {
-                'GET': 'options',
-            },
-            'providers': {
-                'GET': 'providers',
-            },
-        })
+    def is_authenticated(self):
+        # Allow read access with token auth.
+        if super().is_authenticated():
+            return True
 
-    @classmethod
-    def add_url_rules(cls, app, rule_prefix, endpoint_prefix=None):
-        super().add_url_rules(
-            app, rule_prefix, endpoint_prefix=endpoint_prefix)
-        app.add_url_rule(
-            rule_prefix + 'options/',
-            endpoint=cls.build_endpoint_name('options', endpoint_prefix),
-            view_func=cls.as_view('options'),
-            methods=['GET']
-        )
-        app.add_url_rule(
-            rule_prefix + 'providers/',
-            endpoint=cls.build_endpoint_name('providers', endpoint_prefix),
-            view_func=cls.as_view('providers'),
-            methods=['GET']
-        )
+        if self.request_method() == 'GET' and token_auth():
+            return True
+
+        return False
 
     def list(self):
         "List all domains."
-        return Domain.select()
+        provider = request.args.get('provider')
+        domains = Domain.select()
+        if provider:
+            domains = domains.where(Domain.provider == provider)
+        return domains
 
     def detail(self, pk):
         "Get single domain."

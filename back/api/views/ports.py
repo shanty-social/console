@@ -16,8 +16,6 @@ from api.views import BaseResource,  Form, abort
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
-SERVICE_PORTS = [80, 443]
-
 
 class OpenPortForm(Form):
     host = wtforms.StringField('Host', [InputRequired()])
@@ -73,33 +71,10 @@ def _open_port(gateway, service, src_port, dst_port, host):
 
 
 class PortResource(BaseResource):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.http_methods.update({
-            'open_port': {
-                'POST': 'open_port',
-            },
-            'check_port': {
-                'POST': 'check_port',
-            },
-        })
-
-    @classmethod
-    def add_url_rules(cls, app, rule_prefix, endpoint_prefix=None):
-        super().add_url_rules(
-            app, rule_prefix, endpoint_prefix=endpoint_prefix)
-        app.add_url_rule(
-            rule_prefix + 'open_port/',
-            endpoint=cls.build_endpoint_name('open_port', endpoint_prefix),
-            view_func=cls.as_view('open_port'),
-            methods=['POST']
-        )
-        app.add_url_rule(
-            rule_prefix + 'check_port/',
-            endpoint=cls.build_endpoint_name('check_port', endpoint_prefix),
-            view_func=cls.as_view('check_port'),
-            methods=['POST']
-        )
+    extra_actions = {
+        'open_port': ['POST'],
+        'check_port': ['POST'],
+    }
 
     @skip_prepare
     def open_port(self):
@@ -135,7 +110,13 @@ class PortResource(BaseResource):
     @skip_prepare
     def check_port(self):
         "Check if port is open (externally)."
+        try:
+            ports = map(int, request.args.getlist('ports'))
+
+        except ValueError:
+            abort(400, {'ports': 'must be integers'})
+
         r = oauth.shanty.post(
-            '/api/utils/port_scan/', {'ports': SERVICE_PORTS})
+            '/api/utils/port_scan/', {'ports': ports})
 
         return r.json()

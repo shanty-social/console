@@ -7,7 +7,10 @@ from flask_peewee.utils import get_object_or_404
 from wtfpeewee.orm import model_form
 
 from api.models import Setting
-from api.views import BaseResource, TextOrJSONSerializer, Form, abort
+from api.views import (
+    BaseResource, MultiSerializer, JSONSerializer, SettingSerializer, Form,
+    abort,
+)
 from api.auth import token_auth
 
 
@@ -24,7 +27,8 @@ class SettingResource(BaseResource):
         'name': 'name',
         'value': 'value',
     })
-    serializer = TextOrJSONSerializer()
+    serializer = MultiSerializer(
+        json=JSONSerializer(), text=SettingSerializer())
 
     def is_authenticated(self):
         # Allow read access with token auth.

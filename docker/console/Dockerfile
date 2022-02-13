@@ -1,6 +1,8 @@
 FROM ${ARCH}alpine:3.15 AS python
 
 ARG DOCKER_GID=130
+ARG CERT_DIR=/var/lib/certs
+ENV CERT_DIR=${CERT_DIR}
 
 # Add the python application, be sure to exclude dotfiles.
 ADD ./back/api /app/
@@ -16,7 +18,9 @@ RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography
     pipenv install --system --skip-lock && \
     apk del build-base python3-dev git && \
     addgroup -g ${DOCKER_GID} docker && \
-    adduser nobody docker
+    adduser nobody docker && \
+    mkdir ${CERT_DIR} && \
+    chown -R nobody:nobody ${CERT_DIR}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 

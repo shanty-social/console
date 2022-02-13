@@ -51,3 +51,4 @@ SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
 
 AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
+CERT_DIR = os.getenv('CERT_DIR', '/var/lib/certs/')

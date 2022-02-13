@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from flask import (
     make_response, jsonify, request, send_from_directory, abort as _abort
 )
@@ -10,52 +12,6 @@ from wtforms import Form as _Form
 
 from api.auth import session_auth
 
-
-def to_bool(s):
-    if not s or not s.lower() in ('on', 'true', 'yes'):
-        return False
-    return False
-
-
-def _to_text(settings):
-    def _setting_to_text(o):
-        return f'{o["name"]}={json.dumps(o["value"])}'
-
-    def _dict_to_text(o, indent=0):
-        lines = []
-        for name, value in o.items():
-            if isinstance(value, dict):
-                lines.append(f'{name}=')
-                lines.append(_dict_to_text(value, indent=indent+1))
-            else:
-                lines.append(('  ' * indent) + f'{name}={value}')
-        return '\n'.join(lines)
-
-    if 'objects' in settings:
-        # Multiple settings objects.
-        lines = []
-        for setting in settings['objects']:
-            lines.append(_setting_to_text(setting))
-        return '\n'.join(lines)
-
-    elif 'name' in settings and 'value' in settings:
-        # A settings object.
-        return _setting_to_text(settings)
-
-    elif 'error' in settings:
-        return f'error: {settings["error"]}'
-
-    else:
-        # Something else:
-        _dict_to_text(settings)
-
-
-def _from_text(text):
-    name, value = text.split('=')
-    return {
-        'name': name.upper(),
-        'value': value,
-    }
 
 
 def abort(code, obj=None):
@@ -84,31 +40,99 @@ class Form(_Form):
     "Form class allowing dictionary as data."
 
     def __init__(self, data, *args, **kwargs):
+        data = {
+            k: v for k, v in data.items() if v is not None
+        }
         super().__init__(MultiDict(data), *args, **kwargs)
 
 
-class TextOrJSONSerializer(Serializer):
-    "Serialize to json or text."
+def try_int(v):
+    try:
+        return int(v)
+    except ValueError:
+        return v
 
-    json_serializer = JSONSerializer()
+
+class TextSerializer(Serializer):
+    def serialize(self, body):
+        def _make_paths(_parts, _obj):
+            if isinstance(_obj, dict):
+                items = _obj.items()
+            elif isinstance(_obj, list):
+                items = enumerate(_obj)
+            else:
+                key = '.'.join(map(str, _parts))
+                value = _obj if isinstance(_obj, int) else f'"{_obj}"'
+                return [f'{key}={value}']
+
+            lines = []
+            for key, value in items:
+                for line in _make_paths(_parts + [key], value):
+                    lines.append(line)
+            return lines
+
+        body = body.get('objects', body)
+        return '\n'.join(_make_paths([], body))
 
     def deserialize(self, body):
-        ct = request.args.get('format', 'json')
-        if body is None:
-            return
-        if ct == 'text':
-            return _from_text(body.decode('utf-8'))
-        else:
-            return self.json_serializer.deserialize(body)
+        obj = dict()
 
-    def serialize(self, data):
-        ct = request.args.get('format', 'json')
-        if data is None:
-            return
-        if ct == 'text':
-            return _to_text(data)
-        else:
-            return self.json_serializer.serialize(data)
+        for line in [s for s in [s.strip() for s in body.split('\n')] if s]:
+            path, value = line.split('=')
+            parts = [try_int(v) for v in path.split('.')]
+            value = value[1:-1] \
+                if value.startswith('"') and value.endswith('"') \
+                else try_int(value)
+
+            _obj = obj
+            for part in parts[:-1]:
+                _obj = _obj.setdefault(part, dict())
+            _obj[parts[-1]] = value
+
+        def _makelists(_obj):
+            for key, value in _obj.items():
+                _obj[key] = _makelists(value) if isinstance(value, dict) \
+                    else value
+            if all([isinstance(k, int) for k in _obj.keys()]):
+                return [_obj[k] for k in sorted(_obj.keys())]
+            return _obj                
+
+        return _makelists(obj)
+
+
+class SettingSerializer(TextSerializer):
+    def serialize(self, body):
+        if 'name' in body and 'value' in body:
+            body = {body['name']: body['value']}
+        return super().serialize(body)
+
+    def deserialize(self, body):
+        obj = super().deserialize(body)
+        key, value = list(obj.items())[0]
+        return {
+            'name': key,
+            'value': value
+        }
+
+class MultiSerializer(Serializer):
+    "Allow format to be requested in querystring."
+    def __init__(self, **kwargs):
+        self.serializers = kwargs
+
+    @property
+    def serializer(self):
+        ct = request.args.get('format', 'json').lower()
+        serializer = self.serializers.get(ct)
+        if serializer is None:
+            serializer = JSONSerializer() if not self.serializers \
+                else list(self.serializers.values())[0]
+        return serializer
+
+    def serialize(self, body):
+        return self.serializer.serialize(body)
+
+    def deserialize(self, body):
+        return self.serializer.deserialize(body.decode())
 
 
 class BaseResource(FlaskResource):
@@ -118,6 +142,25 @@ class BaseResource(FlaskResource):
     auth_methods = [
         session_auth,
     ]
+    extra_actions = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, methods in self.extra_actions.items():
+            self.http_methods[name] = {
+                method: name for method in methods
+            }
+
+    @classmethod
+    def add_url_rules(cls, app, rule_prefix, endpoint_prefix=None):
+        super().add_url_rules(
+            app, rule_prefix, endpoint_prefix=endpoint_prefix)
+        for name, methods in cls.extra_actions.items():
+            app.add_url_rule(
+                rule_prefix + f'{name}/',
+                endpoint=cls.build_endpoint_name(name, endpoint_prefix),
+                view_func=cls.as_view(name),
+                methods=methods)
 
     def is_authenticated(self):
         if not self.auth_required:

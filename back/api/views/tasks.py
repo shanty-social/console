@@ -1,14 +1,28 @@
 import logging
+from datetime import datetime, timedelta
 
-from restless.preparers import FieldsPreparer
+from flask import request
 from flask_peewee.utils import get_object_or_404
+from restless.preparers import FieldsPreparer
 
 from api.models import Task, TaskLog
 from api.views import BaseResource
+from api.tasks import cron
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+
+@cron('0 0 * * *')
+def purge_tasks():
+    "Delete tasks that created more than 30 days ago."
+    tasks = Task \
+        .select() \
+        .where(Task.created <= datetime.now() - timedelta(days=30))
+    for task in tasks:
+        yield f'Deleting task: {task.id}, created={task.create}'
+        task.delete_instance()
 
 
 exc_preparer = FieldsPreparer(fields={
@@ -50,7 +64,13 @@ class TaskResource(BaseResource):
 
     def list(self):
         "List all tasks."
-        return Task.select()
+        status = request.args.get('status')
+        tasks = Task.select()
+        if status == 'active':
+            tasks = tasks.where(Task.completed.is_null(True))
+        elif status == 'complete':
+            tasks = tasks.where(Task.completed.is_null(False))
+        return tasks
 
     def detail(self, pk):
         "Retrieve single task."
