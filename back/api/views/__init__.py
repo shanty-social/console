@@ -100,26 +100,6 @@ class TextSerializer(Serializer):
         return _makelists(obj)
 
 
-class SettingSerializer(TextSerializer):
-    def serialize(self, body):
-        if 'name' in body and 'value' in body:
-            body = {body['name']: body['value']}
-
-        elif 'objects' in body:
-            body = {
-                o['name']: o['value'] for o in body['objects']
-            }
-
-        return super().serialize(body)
-
-    def deserialize(self, body):
-        obj = super().deserialize(body)
-        key, value = list(obj.items())[0]
-        return {
-            'name': key,
-            'value': value
-        }
-
 class MultiSerializer(Serializer):
     "Allow format to be requested in querystring."
     def __init__(self, **kwargs):

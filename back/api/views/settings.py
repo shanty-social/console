@@ -8,7 +8,7 @@ from wtfpeewee.orm import model_form
 
 from api.models import Setting
 from api.views import (
-    BaseResource, MultiSerializer, JSONSerializer, SettingSerializer, Form,
+    BaseResource, MultiSerializer, JSONSerializer, TextSerializer, Form,
     abort,
 )
 from api.auth import token_auth
@@ -18,6 +18,33 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 SettingForm = model_form(Setting, base_class=Form)
+
+
+class SettingSerializer(TextSerializer):
+    def serialize(self, body):
+        if 'name' in body and 'value' in body:
+            body = {body['name']: body['value']}
+
+        elif 'objects' in body:
+            body = {
+                o['name']: o['value'] for o in body['objects']
+            }
+
+        return super().serialize(body)
+
+    def deserialize(self, body):
+        obj = super().deserialize(body)
+        if len(obj) == 1:
+            n, v = list(obj.items())[0]
+            return {
+                'name': n,
+                'value': v
+            }
+
+        else:
+            return [
+                {'name': n, 'value': v} for n, v in obj.items()
+            ]
 
 
 class SettingResource(BaseResource):
