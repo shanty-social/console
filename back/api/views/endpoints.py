@@ -1,5 +1,6 @@
 import logging
 
+from flask import request
 from flask_peewee.utils import get_object_or_404
 
 from restless.preparers import FieldsPreparer, SubPreparer

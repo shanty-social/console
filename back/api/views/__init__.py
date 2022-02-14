@@ -104,6 +104,12 @@ class SettingSerializer(TextSerializer):
     def serialize(self, body):
         if 'name' in body and 'value' in body:
             body = {body['name']: body['value']}
+
+        elif 'objects' in body:
+            body = {
+                o['name']: o['value'] for o in body['objects']
+            }
+
         return super().serialize(body)
 
     def deserialize(self, body):
