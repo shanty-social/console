@@ -1,7 +1,10 @@
+import ssl
 import socket
 import logging
 
 import docker
+
+from flask import request
 
 from restless.preparers import FieldsPreparer
 from restless.resources import skip_prepare
@@ -12,6 +15,10 @@ from api.config import DOCKER_SOCKET_PATH
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+CONTEXT = ssl.create_default_context()
+CONTEXT.check_hostname = False
+CONTEXT.verify_mode = ssl.CERT_NONE
 
 
 def _container_details(container):
@@ -35,27 +42,48 @@ def _container_details(container):
     }
 
 
-def _sniff(s, host):
-    # Try to determine protocol.
+def _sniff_ssl(host, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(3)
+
+    try:
+        s.connect((host, port))
+        with CONTEXT.wrap_socket(s) as ss:
+            return str(ss.version()).lower()
+
+    except ssl.SSLError as e:
+        # Wrong version, older ssl version.
+        if e.args[0] == 1:
+            return 'ssl'
+
+    except Exception:
+        pass
+
+    finally:
+        s.close()
+
+
+def _sniff(s, host, port):
+    "Try to determine protocol."
     try:
         s.send(f'HTTP/1.1 GET /\r\nHost: {host}\r\n'.encode())
         reply = s.recv(128)
 
     except socket.error:
-        return
+        return 'open'
 
     if not reply:
-        return
+        reply = reply.split(b'\r\n')[0].lower()
+        LOGGER.debug('Received: %s', reply)
 
-    reply = reply.split(b'\r\n')[0].lower()
-    LOGGER.debug('Received: %s', reply)
+        if reply.startswith(b'http'):
+            return 'http'
+        elif b'smtp' in reply:
+            return 'smtp'
+        elif b'ssh' in reply:
+            return 'ssh'
 
-    if reply.startswith(b'http'):
-        return 'http'
-    elif b'smtp' in reply:
-        return 'smtp'
-    elif b'ssh' in reply:
-        return 'ssh'
+    return _sniff_ssl(host, port) or 'open'
 
 
 class HostResource(BaseResource):
@@ -84,22 +112,22 @@ class HostResource(BaseResource):
         return _container_details(d.containers.get(pk))
 
     @skip_prepare
-    def port_scan():
+    def port_scan(self):
         try:
-            host = request.data['host']
-        except KeyError as e:
-            abort(400, {e.args[0]: 'is required'})
+            host = self.data['host']
+            ports = map(int, self.data['ports'])
 
-        try:
-            ports = map(int, request.data.getlist('ports'))
         except ValueError:
             abort(400, {'ports': 'should be a list of integers'})
 
-        if not ports:
-            abort(400, {'ports': 'is required'})
+        except KeyError as e:
+            abort(400, {e.args[0]: 'is required'})
 
-        results = {}
-
+        results_ports = {}
+        results = {
+            'host': host,
+            'ports': results_ports,
+        }
         for port in ports:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(3)
@@ -107,9 +135,10 @@ class HostResource(BaseResource):
             try:
                 s.connect((host, port))
                 LOGGER.debug('Connected to %s:%i', host, port)
-                results[f'{host}:{port}'] = _sniff(s, host)
+                results_ports[port] = _sniff(s, host, port)
 
             except socket.error as e:
+                results_ports[port] = 'closed'
                 continue
 
             finally:
