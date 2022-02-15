@@ -20,6 +20,7 @@ authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0
 wtf-peewee = "*"
 certsign = "*"
 python-ddns = "*"
+uwsgi-chunked = "==0.1.8"
 
 [dev-packages]
 flake8 = "*"
