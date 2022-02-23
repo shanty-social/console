@@ -1,9 +1,9 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Home from '@/pages/Home'
-import Login from '@/pages/Login'
-import Endpoints from '@/pages/Endpoints'
-import Domains from '@/pages/Domains'
+import Home from '@/views/Home'
+import Login from '@/views/Login'
+import Endpoints from '@/views/Endpoints'
+import Domains from '@/views/Domains'
 
 Vue.use(Router)
 

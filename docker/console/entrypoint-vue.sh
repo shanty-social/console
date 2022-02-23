@@ -2,4 +2,4 @@
 
 cd /front
 
-npm run dev
+npm run serve

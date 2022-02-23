@@ -53,7 +53,7 @@ export default {
     onLogin () {
       axios
         .post('/api/users/login/', this.form)
-        .then((r) => {
+        .then(() => {
           this.$router.push(this.next)
         })
         .catch((e) => {
