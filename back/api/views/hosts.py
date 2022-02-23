@@ -1,6 +1,7 @@
 import ssl
 import socket
 import logging
+from pprint import pprint
 
 import docker
 
@@ -25,20 +26,18 @@ def _container_details(container):
     "Get details of container."
     NetworkSettings = container.attrs['NetworkSettings']
     Config = container.attrs['Config']
-    ports = [
-        port for port in NetworkSettings['Ports'].keys()
-        if port.endswith('/tcp')
-    ]
     aliases = []
     for network in NetworkSettings['Networks'].values():
         if network['Aliases']:
             aliases.extend(network['Aliases'])
     return {
         'id': container.attrs['Id'],
+        'created': container.attrs['Created'],
+        'hostname': Config['Hostname'],
         'service': Config['Labels'].get('com.docker.compose.service'),
         'image': Config['Image'],
         'aliases': aliases,
-        'ports': ports,
+        'ports': list(Config.get('ExposedPorts', {}).keys()),
     }
 
 
@@ -90,6 +89,8 @@ class HostResource(BaseResource):
     "Manage docker hosts."
     preparer = FieldsPreparer(fields={
         'id': 'id',
+        'created': 'created',
+        'hostname': 'hostname',
         'service': 'service',
         'image': 'image',
         'ports': 'ports',
@@ -101,9 +102,17 @@ class HostResource(BaseResource):
 
     def list(self):
         "List potential docker hosts/ports."
+        filters = { }
+        kwargs = { 'all': False, 'filters': filters }
+        try:
+            filters['status'] = request.args['status']
+        except KeyError:
+            pass
         d = docker.DockerClient(base_url=f'unix://{DOCKER_SOCKET_PATH}')
+        containers = d.containers.list(**kwargs)
+        # pprint(containers[0].attrs)
         return [
-            _container_details(c) for c in d.containers.list()
+            _container_details(c) for c in containers
         ]
 
     def detail(self, pk):

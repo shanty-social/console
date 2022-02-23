@@ -1,10 +1,10 @@
 from restless.preparers import FieldsPreparer
 from restless.resources import skip_prepare
 
+import wtforms
+from peewee import IntegrityError
 from flask import request
 from flask_peewee.utils import get_object_or_404
-
-import wtforms
 from wtforms.validators import InputRequired
 from wtfpeewee.orm import model_form
 
@@ -36,11 +36,18 @@ class UserResource(BaseResource):
         'login': ['POST'],
         'logout': ['POST'],
         'whoami': ['GET'],
+        'count': ['GET'],
     }
 
     def is_authenticated(self):
-        if self.endpoint == 'login':
+        print(self.endpoint)
+        if self.endpoint in ('whoami', 'login', 'count'):
             return True
+
+        elif self.endpoint == 'list' and request.method == 'POST':
+            # Creating a user is allowed anonymously if there are 0 users.
+            return User.select().count() == 0 or super().is_authenticated()
+
         return super().is_authenticated()
 
     def list(self):
@@ -54,9 +61,17 @@ class UserResource(BaseResource):
         return User.get(User.username == pk)
 
     def create(self):
-        form = UserForm.from_json(self.data)
+        form = UserForm(self.data)
         if not form.validate():
             abort(400, form.errors)
+        user = User(username=form.username.data, name=form.name.data)
+        user.set_password(form.password.data)
+        try:
+            user.save()
+
+        except IntegrityError:
+            user = User.get()
+
         user, created = User.get_or_create(
             username=form.username.data, defaults={'name': form.name.data})
         user.set_password(form.password.data)
@@ -73,7 +88,10 @@ class UserResource(BaseResource):
 
     def whoami(self):
         "Details of a particular service."
-        return get_logged_in_user()
+        user = get_logged_in_user()
+        if not user:
+            abort(404)
+        return user
 
     def login(self):
         form = LoginForm(request.get_json())
@@ -81,3 +99,7 @@ class UserResource(BaseResource):
             abort(400, form.errors)
 
         return log_in_user(form.username.data, form.password.data)
+
+    @skip_prepare
+    def count(self):
+        return {'userCount': User.select().count()}

@@ -1,9 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from '@/views/Home'
-import Login from '@/views/Login'
-import Endpoints from '@/views/Endpoints'
-import Domains from '@/views/Domains'
+import Authentication from '@/views/Authentication'
+import Settings from '@/views/Settings'
 
 Vue.use(Router)
 
@@ -17,17 +16,12 @@ export default new Router({
     {
       path: '/login',
       name: 'Login',
-      component: Login
+      component: Authentication
     },
     {
-      path: '/endpoints',
-      name: 'Endpoints',
-      component: Endpoints
-    },
-    {
-      path: '/domains',
-      name: 'Domains',
-      component: Domains
+      path: '/settings',
+      name: 'Settings',
+      component: Settings
     }
   ]
 })

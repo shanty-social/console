@@ -62,10 +62,10 @@ def _get_models():
 def create_tables():
     "Create database tables."
     db.database.create_tables(_get_models(), safe=True)
-    User.get_or_create(
-        username='admin',
-        defaults={'name': 'Admin', 'password': make_password('password')}
-    )
+    # User.get_or_create(
+    #     username='admin',
+    #     defaults={'name': 'Admin', 'password': make_password('password')}
+    # )
     uuid, created = Setting.get_or_create(
         name='CONSOLE_UUID', defaults={'value': str(uuid4())})
 
