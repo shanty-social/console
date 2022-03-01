@@ -33,20 +33,8 @@
             </v-list>
           </v-card>
         </v-flex>
-        <v-flex
-          xs8 sm3 md8 ml-4
-        >
-          <v-card
-            v-if="selected !== null"
-            class="elevation-12"
-          >
-            <v-toolbar dark color="primary">
-              <v-toolbar-title v-text="items[selected].name"></v-toolbar-title>
-            </v-toolbar>
-            <v-card-text>
-              <component :is="items[selected].component"/>
-            </v-card-text>
-          </v-card>
+        <v-flex xs8 sm3 md8 ml-4>
+          <component :is="items[selected].component"/>
         </v-flex>
       </v-layout>
     </v-container>
@@ -55,12 +43,14 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import Endpoints from '@/components/Endpoints'
 import Hosts from '@/components/Hosts'
 
 export default {
   name: 'Settings',
 
   components: {
+    Endpoints,
     Hosts
   },
 
@@ -71,16 +61,19 @@ export default {
   },
 
   mounted () {
+    this.$store.dispatch('endpoints/fetch')
     this.$store.dispatch('hosts/fetch')
   },
 
   computed: {
     ...mapGetters({
+      endpoints: 'endpoints/count',
       hosts: 'hosts/count'
     }),
 
     items () {
       return [
+        { icon: 'mdi-earth', name: 'Endpoints', count: this.endpoints, component: Endpoints },
         { icon: 'mdi-package-variant', name: 'Containers', count: this.hosts, component: Hosts }
       ]
     }

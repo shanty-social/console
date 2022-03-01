@@ -51,12 +51,14 @@
 export default {
   name: 'Login',
 
-  data () {
-    let next = this.$route.query.next
-    if (next) {
-      next = decodeURI(next)
+  props: {
+    next: {
+      type: String,
+      default: '/settings'
     }
+  },
 
+  data () {
     return {
       form: {
         username: null,
@@ -64,14 +66,13 @@ export default {
       },
       rules: {
         username: [
-          v => (v || '').length || 'Is required'
+          v => (v || '').length  > 0 || 'Is required'
         ],
         password: [
-          v => (v || '').length || 'Is required'
+          v => (v || '').length > 0 || 'Is required'
         ]
       },
       error: null,
-      next: next || '/settings'
     }
   },
 

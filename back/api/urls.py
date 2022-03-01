@@ -9,6 +9,7 @@ from api.views.endpoints import EndpointResource
 from api.views.hosts import HostResource
 from api.views.ports import PortResource
 from api.views.certs import CertResource, acme
+from api.views.tor import TorResource
 
 
 # API endpoints.
@@ -34,3 +35,4 @@ TaskLogResource.add_url_rules(app, rule_prefix='/api/tasks/<task_pk>/log/')
 UserResource.add_url_rules(app, rule_prefix='/api/users/')
 PortResource.add_url_rules(app, rule_prefix='/api/ports/')
 CertResource.add_url_rules(app, rule_prefix='/api/certs/')
+TorResource.add_url_rules(app, rule_prefix='/api/tor/')

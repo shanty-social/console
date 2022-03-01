@@ -1,10 +1,13 @@
-.venv: Pipfile
-	PIPENV_VENV_IN_PROJECT=true pipenv install --dev
-	touch .venv
+VENV=$(shell pipenv --venv)
+
+
+${VENV}: Pipfile
+	pipenv install --dev
+	touch ${VENV}
 
 
 .PHONY: deps
-deps: .venv
+deps: ${VENV}
 
 
 .PHONY: test

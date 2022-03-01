@@ -21,6 +21,9 @@ wtf-peewee = "*"
 certsign = "*"
 python-ddns = "*"
 uwsgi-chunked = "==0.1.8"
+pyyaml = "*"
+mkpy224o = "*"
+gevent = "*"
 
 [dev-packages]
 flake8 = "*"

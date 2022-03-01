@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime, timedelta
 
-from flask import request
+from flask import request, json
 from flask_peewee.utils import get_object_or_404
 from restless.preparers import FieldsPreparer
 
 from api.models import Task, TaskLog
 from api.views import BaseResource
 from api.tasks import cron
+from api.app import socketio
 
 
 LOGGER = logging.getLogger(__name__)
@@ -23,12 +24,6 @@ def purge_tasks():
     for task in tasks:
         yield f'Deleting task: {task.id}, created={task.create}'
         task.delete_instance()
-
-
-exc_preparer = FieldsPreparer(fields={
-    'type': 'type',
-    'value': 'value',
-})
 
 
 class ResultPreparer(FieldsPreparer):
@@ -49,32 +44,50 @@ class ResultPreparer(FieldsPreparer):
         return super().lookup_data(lookup, data)
 
 
+exc_preparer = FieldsPreparer(fields={
+    'type': 'type',
+    'value': 'value',
+})
+
+task_preparer = ResultPreparer(fields={
+    'id': 'id',
+    'function': 'function',
+    'result': 'result',
+    'created': 'created',
+    'completed': 'completed',
+    'tail': 'tail.message',
+})
+
+
 class TaskResource(BaseResource):
     "Manage settings."
-    preparer = ResultPreparer(fields={
-        'id': 'id',
-        'function': 'function',
-        'args': 'args',
-        'kwargs': 'kwargs',
-        'result': 'result',
-        'created': 'created',
-        'completed': 'completed',
-        'tail': 'tail.message',
-    })
+    preparer = task_preparer
+    extra_actions = {
+        'cancel': ['POST'],
+    }
 
     def list(self):
         "List all tasks."
         status = request.args.get('status')
+        function = request.args.get('function')
         tasks = Task.select()
         if status == 'active':
             tasks = tasks.where(Task.completed.is_null(True))
         elif status == 'complete':
             tasks = tasks.where(Task.completed.is_null(False))
+        if function:
+            tasks = tasks.where(Task.function == function)
         return tasks
 
     def detail(self, pk):
         "Retrieve single task."
         return get_object_or_404(Task, Task.id == pk)
+
+    def cancel(self, pk):
+        "Cancel task."
+        task = get_object_or_404(Task, Task.id == pk)
+        task.cancel()
+        return task
 
     def delete(self, pk):
         "Delete task."

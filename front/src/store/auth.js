@@ -25,6 +25,9 @@ export default {
   mutations: {
     updateAuth (state, user) {
       state.auth = user
+      if (user) {
+        this._vm.$socket.connect()
+      }
     },
 
     updateUserCount (state, count) {

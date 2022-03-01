@@ -3,7 +3,7 @@ from pprint import pformat
 
 from authlib.integrations.flask_client import OAuth
 
-from flask import Flask
+from flask import Flask, json
 from flask_socketio import SocketIO
 from flask_peewee.db import Database
 from flask_caching import Cache
@@ -48,7 +48,24 @@ app = Flask(
     __name__, static_url_path='/static/', static_folder='../static')
 app.config.from_object('api.config')
 
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins='*', json=json)
+
+
+@socketio.on('connect')
+def socketio_auth():
+    "Perform session authentication."
+    from api.auth import get_logged_in_user
+    if not get_logged_in_user():
+        LOGGER.info('Websocket failed auth')
+        disconnect()
+    LOGGER.debug('Websocket connected')
+
+
+@socketio.on('disconnect')
+def socketio_disconnect():
+    LOGGER.debug('Websocket disconnected')
+
+
 db = Database(app)
 cache = Cache(app)
 oauth = OAuth(

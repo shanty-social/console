@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import Home from '@/views/Home'
 import Authentication from '@/views/Authentication'
 import Settings from '@/views/Settings'
+import Endpoint from '@/views/Endpoint'
 
 Vue.use(Router)
 
@@ -22,6 +23,11 @@ export default new Router({
       path: '/settings',
       name: 'Settings',
       component: Settings
+    },
+    {
+      path: '/endpoint',
+      name: 'Endpoint',
+      component: Endpoint
     }
   ]
 })

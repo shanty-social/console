@@ -2,9 +2,16 @@
   <v-card class="elevation-12">
     <v-toolbar dark color="primary">
       <v-toolbar-title>Endpoints</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-toolbar-items>
+        <v-btn
+          icon
+          to="/endpoint"
+        ><v-icon>mdi-plus</v-icon></v-btn>
+      </v-toolbar-items>
     </v-toolbar>
     <v-card-text>
-      <p>Below are the containers that you can expose to the world.</p>
+      <p>Endpoints route traffic from the Internet to your websites.</p>
       <v-list>
         <v-list-item
           v-for="(item, i) of items"
@@ -28,7 +35,7 @@
             <v-btn
               icon
               @click="remove(item.uid)"
-            ><v-icon>mdi-earth-plus</v-icon></v-btn>
+            ><v-icon>mdi-pencil-outline</v-icon></v-btn>
           </v-list-item-action>
         </v-list-item>
       </v-list>
@@ -47,12 +54,12 @@ export default {
   },
 
   computed: {
-    ...mapGetters({ items: 'hosts/data' })
+    ...mapGetters({ items: 'endpoints/data' })
   },
 
   methods: {
     ...mapActions({
-      fetch: 'hosts/fetch'
+      fetch: 'endpoints/fetch'
     })
   }
 }

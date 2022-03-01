@@ -11,9 +11,10 @@ from peewee import (
 )
 from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
+from playhouse.signals import Signal, pre_save, post_save, pre_delete, post_delete, pre_init
 from stopit import async_raise
 
-from api.app import db
+from api.app import db, socketio
 
 
 LOGGER = logging.getLogger()
@@ -102,6 +103,26 @@ class VersionField(CharField):
         return str(val)
 
 
+class SignalMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        pre_init.send(self)
+
+    def save(self, *args, **kwargs):
+        pk_value = self._pk if self._meta.primary_key else True
+        created = kwargs.get('force_insert', False) or not bool(pk_value)
+        pre_save.send(self, created=created)
+        ret = super().save(*args, **kwargs)
+        post_save.send(self, created=created)
+        return ret
+
+    def delete_instance(self, *args, **kwargs):
+        pre_delete.send(self)
+        ret = super().delete_instance(*args, **kwargs)
+        post_delete.send(self)
+        return ret
+    
+
 class Setting(db.Model):
     "Store settings."
     group = CharField(default=DEFAULT_SETTING_GROUP)
@@ -120,8 +141,11 @@ class Setting(db.Model):
         return setting.value
 
 
-class Task(db.Model):
+class Task(SignalMixin, db.Model):
     "Background task."
+    class Meta:
+        only_save_dirty = True
+
     id = UUIDField(primary_key=True, default=uuid4)
     function = PickleField(null=False)
     args = PickleField(null=True)
@@ -135,11 +159,11 @@ class Task(db.Model):
         return f'<Task {self.id}, {self.function.__name__}, ' \
                f'args={self.args}, kwargs={self.kwargs}>'
 
-    def get_result(self):
+    def get_result(self, default=None):
         # Get a fresh instance:
         task = self.refresh()
-        if task.result is None:
-            raise ValueError('Task not completed')
+        if task.completed is None:
+            return default
         if isinstance(task.result, Exception):
             raise task.result
         return task.result
@@ -148,21 +172,22 @@ class Task(db.Model):
         from api.tasks import CancelledError, find_thread
         LOGGER.debug('Task[%s] Cancelling', self.id)
         t = find_thread(str(self.id))
+        if t is None:
+            return
         async_raise(t.ident, CancelledError)
 
     def wait(self, timeout=None):
         from api.tasks import find_thread
         LOGGER.debug('Task[%s] waiting', self.id)
         t = find_thread(str(self.id))
-        if t is None:
+        if t is not None:
+            # Still running, wait...
+            t.join(timeout=timeout)
+            if t.is_alive():
+                # if join() returns and thread is alive, we timed out.
+                raise TimeoutError('Timed out waiting for thread')
+        else:
             LOGGER.debug('Task[%s] not found', self.id)
-            # Already done?
-            return self.get_result()
-        # Still running, wait...
-        t.join(timeout=timeout)
-        if t.is_alive():
-            # if join() returns and thread is alive, we timed out.
-            raise TimeoutError('Timed out waiting for thread')
         return self.get_result()
 
     def refresh(self):
@@ -173,7 +198,7 @@ class TaskLog(db.Model):
     "Background task log output."
     task = ForeignKeyField(Task, backref='log')
     created = DateTimeField(default=datetime.now)
-    message = CharField()
+    message = PickleField()
 
     def __unicode__(self):
         return f'<TaskLog {self.message}>'
@@ -228,3 +253,19 @@ class Endpoint(db.Model):
     path = CharField(null=False, default='/')
     type = CharField(null=False, choices=ENDPOINT_TYPES.items())
     domain = ForeignKeyField(Domain, null=False, backref='entrypoints')
+
+
+class Torkey(db.Model):
+    "Tor key representing key pair and resulting hostname (prefix denotes vanity address)."
+    prefix = CharField(null=True)
+    hostname = CharField(null=False, unique=True)
+    public = CharField(null=False)
+    secret = CharField(null=False)
+
+
+@post_save(sender=Task)
+def on_task_event(sender, instance, created):
+    "Publish task events to socket.io."
+    from api.views.tasks import task_preparer
+    socketio.emit('models.task.post_save',
+        task_preparer.prepare(instance.refresh()), broadcast=True)

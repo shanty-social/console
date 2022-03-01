@@ -7,6 +7,8 @@ from datetime import datetime
 import pycron
 from stopit import threading_timeoutable, TimeoutException
 
+from playhouse.signals import post_save
+
 from api.models import Task, TaskLog
 
 
@@ -29,12 +31,10 @@ def _wrap_generator(task):
 
         while True:
             try:
-                log = TaskLog(task=task, message=next(gen))
-                LOGGER.debug('Task[%s] log: %s', task.id, log.message)
-                log.save()
-                (Task
-                    .update(tail=log)
-                    .where(Task.id == task.id)).execute()
+                message = next(gen)
+                LOGGER.debug('Task[%s] log: %s', task.id, message)
+                task.tail = TaskLog.create(task=task, message=message)
+                task.save()
 
             except StopIteration as e:
                 return e.value
@@ -42,17 +42,22 @@ def _wrap_generator(task):
     return wrapper
 
 
+# NOTE: timeout kwarg is consumed by this decorator.
 @threading_timeoutable()
-def _task_runner(task):
+def _task_runner(task, pass_task_as=None):
     if inspect.isgeneratorfunction(task.function):
         runnable = _wrap_generator(task)
     else:
         runnable = task.function
 
+    kwargs = task.kwargs.copy()
+    if pass_task_as:
+        kwargs[pass_task_as] = task
+
     result = None
     try:
         LOGGER.debug('Task[%s] starting...', task.id)
-        result = runnable(*task.args, **task.kwargs)
+        result = runnable(*task.args, **kwargs)
         LOGGER.debug('Task[%s] result: %s', task.id, result)
 
     except (TimeoutException, CancelledError) as e:
@@ -67,12 +72,9 @@ def _task_runner(task):
 
     # Update task information
     LOGGER.debug('Task[%s] saving...', task.id)
-    (Task
-        .update(
-            result=result,
-            completed=datetime.now(),
-        )
-        .where(Task.id == task.id)).execute()
+    task.result = result
+    task.completed = datetime.now()
+    task.save()
 
 
 def cron(schedule, *args, **kwargs):
@@ -126,12 +128,13 @@ def stop_scheduler():
     CRON = None
 
 
-def defer(f, args=(), kwargs={}, timeout=None):
+def defer(f, args=(), kwargs={}, timeout=None, pass_task_as=None):
     "Defer a function to run as a task."
+    pass_task_as = 'task' if pass_task_as is True else pass_task_as
     task = Task(function=f, args=args, kwargs=kwargs)
     task.save(force_insert=True)  # Save to get an id assigned.
-    t = threading.Thread(
-        target=_task_runner, args=(task,), kwargs={'timeout': timeout},
+    t = threading.Thread(target=_task_runner, args=(task,),
+        kwargs={'timeout': timeout, 'pass_task_as': pass_task_as},
         daemon=False, name=str(task.id))
     t.start()
     LOGGER.debug('Task[%s] started', task.id)

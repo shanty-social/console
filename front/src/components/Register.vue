@@ -63,12 +63,14 @@ import { mapActions } from 'vuex'
 export default {
   name: 'Register',
 
-  data () {
-    let next = this.$route.query.next
-    if (next) {
-      next = decodeURI(next)
+  props: {
+    next: {
+      type: String,
+      default: '/login'
     }
+  },
 
+  data () {
     return {
       form: {
         name: null,
@@ -87,7 +89,6 @@ export default {
         ]
       },
       error: null,
-      next: next || '/'
     }
   },
 
@@ -101,6 +102,7 @@ export default {
         .post('/api/users/', this.form)
         .then(() => {
           this.fetchUserCount(true)
+          this.$router.push(this.next)
         })
         .catch((e) => {
           this.error = e.message

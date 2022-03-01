@@ -15,4 +15,5 @@ chown nobody:nobody ${FLASK_SESSION_FILE_DIR}
 
 uwsgi --enable-threads --http=${FLASK_HOST}:${FLASK_PORT} \
       --uid=65534 --gid=65534 --cache2 name=default,items=${FLASK_CACHE_SIZE} \
-      --manage-script-name --mount /=api.wsgi:app ${UWSGI_ARGS}
+      --http-websockets --gevent 1000 --manage-script-name \
+      --mount /=api.wsgi:app ${UWSGI_ARGS}

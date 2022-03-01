@@ -40,7 +40,6 @@ class UserResource(BaseResource):
     }
 
     def is_authenticated(self):
-        print(self.endpoint)
         if self.endpoint in ('whoami', 'login', 'count'):
             return True
 

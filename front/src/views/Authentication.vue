@@ -2,9 +2,11 @@
   <v-main>
     <Login
       v-if="userCount"
+      :next="next"
     />
     <Register
       v-else
+      :next="next"
     />
   </v-main>
 </template>
@@ -20,6 +22,17 @@ export default {
   components: {
     Login,
     Register
+  },
+
+  data () {
+    let next = this.$route.query.next
+    if (next) {
+      next = decodeURI(next)
+    }
+
+    return {
+      next,
+    }
   },
 
   mounted () {

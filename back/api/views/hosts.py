@@ -26,17 +26,21 @@ def _container_details(container):
     "Get details of container."
     NetworkSettings = container.attrs['NetworkSettings']
     Config = container.attrs['Config']
-    aliases = []
+    aliases, addresses = [], []
     for network in NetworkSettings['Networks'].values():
-        if network['Aliases']:
+        if network.get('Aliases'):
             aliases.extend(network['Aliases'])
+        if network.get('IPAddress'):
+            addresses.append(network['IPAddress'])
     return {
         'id': container.attrs['Id'],
         'created': container.attrs['Created'],
         'hostname': Config['Hostname'],
         'service': Config['Labels'].get('com.docker.compose.service'),
         'image': Config['Image'],
+        'mode': Config.get('HostConfig', {}).get('NetworkMode'),
         'aliases': aliases,
+        'addresses': addresses,
         'ports': list(Config.get('ExposedPorts', {}).keys()),
     }
 
@@ -94,6 +98,8 @@ class HostResource(BaseResource):
         'service': 'service',
         'image': 'image',
         'ports': 'ports',
+        'addresses': 'addresses',
+        'mode': 'mode',
         'aliases': 'aliases',
     })
     extra_actions = {
@@ -122,15 +128,21 @@ class HostResource(BaseResource):
 
     @skip_prepare
     def port_scan(self):
+        only_open = 'only_open' in request.args
         try:
             host = self.data['host']
-            ports = map(int, self.data['ports'])
-
-        except ValueError:
-            abort(400, {'ports': 'should be a list of integers'})
 
         except KeyError as e:
             abort(400, {e.args[0]: 'is required'})
+
+        try:
+            ports = map(int, self.data['ports'])
+
+        except KeyError as e:
+            ports = range(1, 65535)
+
+        except ValueError:
+            abort(400, {'ports': 'should be a list of integers'})
 
         results_ports = {}
         results = {
@@ -147,7 +159,8 @@ class HostResource(BaseResource):
                 results_ports[port] = _sniff(s, host, port)
 
             except socket.error as e:
-                results_ports[port] = 'closed'
+                if not only_open:
+                    results_ports[port] = 'closed'
                 continue
 
             finally:

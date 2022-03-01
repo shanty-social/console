@@ -8,13 +8,18 @@ module.exports = {
   outputDir: 'dist/',
   assetsDir: 'assets/',
   devServer: {
-      host: VUE_HOST,
-      port: VUE_PORT,
-      proxy: {
+    host: VUE_HOST,
+    port: VUE_PORT,
+    proxy: {
       "^/api/": {
         target: `http://${FLASK_HOST}:${FLASK_PORT}`,
         secure: false
-      }
+      },
+      "^/socket.io/": {
+        target: `http://${FLASK_HOST}:${FLASK_PORT}`,
+        secure: false,
+        ws: true
+      },
     }
   },
   transpileDependencies: [
