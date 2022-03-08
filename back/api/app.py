@@ -3,8 +3,8 @@ from pprint import pformat
 
 from authlib.integrations.flask_client import OAuth
 
-from flask import Flask, json
-from flask_socketio import SocketIO
+from flask import Flask, json, session
+from flask_socketio import SocketIO, disconnect
 from flask_peewee.db import Database
 from flask_caching import Cache
 from flask_session import Session
@@ -17,29 +17,18 @@ LOGGER.addHandler(logging.StreamHandler())
 
 
 def fetch_token(name):
-    from api.models import Setting
     LOGGER.info('Fetching token %s', name)
-    setting = Setting.get_or_none(name=f'OAUTH_TOKEN_{name}')
-    try:
-        return setting.value
-    except AttributeError:
-        return None
+    return session.get(f'token.{name}')
 
 
 def update_token(name, token):
-    from api.models import Setting
     LOGGER.info('Updating token %s: %s', name, token)
-    setting, created = Setting.get_or_create(
-        name=f'OAUTH_TOKEN_{name}', defaults={'value': token})
-    if not created:
-        setting.value = token
-        setting.save()
+    session[f'token.{name}'] = token
 
 
 def delete_token(name):
-    from api.models import Setting
-    q = Setting.delete().where(Setting.name == f'OAUTH_TOKEN_{name}')
-    q.execute()
+    LOGGER.info('Deleting token %s', name)
+    session.pop(f'token.{name}', None)
 
 
 LOGGER.debug('Running with config: %s', pformat(config))
@@ -70,5 +59,7 @@ db = Database(app)
 cache = Cache(app)
 oauth = OAuth(
     app, cache=cache, fetch_token=fetch_token, update_token=update_token)
-oauth.register(name='shanty')
+for provider in config.OAUTH_PROVIDERS:
+    oauth.register(
+        name=provider, client_kwargs={'scope': 'openid email profile'})
 Session(app)

@@ -10,7 +10,7 @@ export default {
   getters: {
     data (state) {
       return state.data
-    },
+    }
   },
 
   mutations: {
@@ -21,9 +21,10 @@ export default {
     add (state, data) {
       const index = state.data.findIndex(o => o.id === data.id)
       if (index !== -1) {
-        state.data.splice(index, 1)
+        state.data[index] = data
+      } else {
+        state.data.push(data)
       }
-      state.data.push(data)
     },
 
     del (state, id) {
@@ -35,7 +36,7 @@ export default {
   actions: {
     fetch({ commit }) {
       axios
-        .get('/api/tasks/')
+        .get('/api/tor/')
         .then((r) => {
           commit('set', r.data.objects)
         })
@@ -44,16 +45,11 @@ export default {
 
     delete ({ commit }, id) {
       axios
-        .delete(`/api/tasks/${id}/`)
+        .delete(`/api/tor/${id}/`)
         .then(() => {
           commit('del', id)
         })
-        .catch((e) => {
-          if (e.response && e.response.status === 404) {
-            commit('del', id)
-          }
-          console.error(e)
-        })
+        .catch(console.error)
     }
   }
 }

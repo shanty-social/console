@@ -4,17 +4,17 @@ export default {
   namespaced: true,
 
   state: {
-    auth: null,
+    whoami: null,
     userCount: null
   },
 
   getters: {
     isAuthenticated (state) {
-      return state.auth !== null && state.auth !== false
+      return state.whoami !== null && state.whoami !== false
     },
 
     whoami (state) {
-      return state.auth
+      return state.whoami
     },
 
     userCount (state) {
@@ -23,14 +23,14 @@ export default {
   },
 
   mutations: {
-    updateAuth (state, user) {
-      state.auth = user
+    setWhoami (state, user) {
+      state.whoami = user
       if (user) {
         this._vm.$socket.connect()
       }
     },
 
-    updateUserCount (state, count) {
+    setUserCount (state, count) {
       state.userCount = count
     }
   },
@@ -38,48 +38,31 @@ export default {
   actions: {
     whoami ({ state, commit }) {
       return new Promise((resolve) => {
-        if (state.auth === false) {
+        if (state.whoami === false) {
           resolve(null)
           return
-        } else if (state.auth) {
-          resolve(state.auth)
+        } else if (state.whoami) {
+          resolve(state.whoami)
           return
         }
         axios
-          .get('/api/users/whoami/')
+          .get('/api/whoami/')
           .then((r) => {
-            commit('updateAuth', r.data)
-            resolve(state.auth)
+            commit('setWhoami', r.data)
+            resolve(state.whoami)
           })
           .catch(() => {
-            commit('updateAuth', false)
+            commit('setWhoami', false)
             resolve(null)
           })
       })
     },
 
-    fetchUserCount({ state, commit }, force=false) {
-      if (!force && state.userCount !== null) return
-
-      axios
-        .get('/api/users/count/')
-        .then((r) => {
-          commit('updateUserCount', r.data.userCount)
-        })
-        .catch(console.error)
-    },
-
-    async login ({ commit, dispatch }, data) {
-      const r = await axios.post('/api/users/login/', data)
-      dispatch('auth/fetchUserCount', true)
-      commit('updateAuth', r.data)
-    },
-
     logout({ commit }) {
       axios
-        .post('/api/users/logout/')
+        .get('/api/oauth/shanty/end/')
         .then(() => {
-          commit('updateAuth', null)
+          commit('setWhoami', null)
         })
         .catch(console.error)
     }

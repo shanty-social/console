@@ -1,5 +1,6 @@
 import os
 import sys
+from urllib.parse import urlparse, urljoin
 
 
 def get_from_env_or_file(var_name, default=None):
@@ -35,20 +36,43 @@ SERVICE_URL = os.getenv('FLASK_SERVICE_URL', None)
 
 LOG_LEVEL = os.getenv('FLASK_LOG_LEVEL', 'ERROR')
 
+SHANTY_BASE_URL = os.getenv(
+    'FLASK_SHANTY_BASE_URL', 'http://localhost:8000/')
+
 SHANTY_CLIENT_ID = os.getenv(
     'FLASK_SHANTY_CLIENT_ID', '19bbc55f-0f6f-4fca-95bc-f86286db43da')
+
 SHANTY_CLIENT_SECRET = get_from_env_or_file(
     'FLASK_SHANTY_CLIENT_SECRET', '50ec237f-20b0-4a47-8a25-b329f6d53beb')
-SHANTY_ACCESS_TOKEN_URL = os.getenv(
-    'FLASK_SHANTY_REQUEST_TOKEN_URL',
-    'http://localhost:8000/api/oauth2/token/')
-SHANTY_AUTHORIZE_URL = os.getenv(
-    'FLASK_SHANTY_AUTHORIZE_URL', 'http://localhost:8000/#/authorize')
-SHANTY_API_BASE_URL = os.getenv(
-    'FLASK_SHANTY_API_BASE_URL', 'http://localhost:8000/api/')
+
+SHANTY_API_BASE_URL = urljoin(
+    SHANTY_BASE_URL,
+    os.getenv('FLASK_SHANTY_API_PATH', '/api')
+)
+
+SHANTY_ACCESS_TOKEN_URL = urljoin(
+    SHANTY_BASE_URL,
+    os.getenv('FLASK_SHANTY_REQUEST_TOKEN_PATH', '/api/oauth2/token/')
+)
+
+SHANTY_AUTHORIZE_URL = urljoin(
+    SHANTY_BASE_URL,
+    os.getenv('FLASK_SHANTY_AUTHORIZE_PATH', '/#/authorize')
+)
+
+SHANTY_SERVER_METADATA_URL = urljoin(
+    SHANTY_BASE_URL,
+    os.getenv('FLASK_SHANTY_METADATA_PATH', '/api/oauth2/metadata/')
+)
+
+OAUTH_PROVIDERS = [
+    'shanty',
+]
 
 SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
 
 AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
 CERT_DIR = os.getenv('CERT_DIR', '/var/lib/certs/')
+
+EXTERNAL_HOST = urlparse(os.getenv('EXTERNAL_HOST', 'http://localhost:8080'))

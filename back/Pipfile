@@ -18,12 +18,12 @@ docker = "*"
 uwsgi = "*"
 authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0dd74599191a7726600bfbdda2"}
 wtf-peewee = "*"
-certsign = "*"
 python-ddns = "*"
 uwsgi-chunked = "==0.1.8"
 pyyaml = "*"
-mkpy224o = "*"
+mkpy224o = "==0.1.4"
 gevent = "*"
+acme = "*"
 
 [dev-packages]
 flake8 = "*"

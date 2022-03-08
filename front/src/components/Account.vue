@@ -2,9 +2,9 @@
   <div>
     <v-btn
       v-if="!isAuthenticated"
-      to="/login"
+      href="/api/oauth/shanty/"
     >
-      {{ (userCount) ? 'Login' : 'Register' }}
+      Login
       <v-icon>mdi-login-variant</v-icon>
     </v-btn>
     <v-btn

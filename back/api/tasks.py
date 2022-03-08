@@ -31,10 +31,7 @@ def _wrap_generator(task):
 
         while True:
             try:
-                message = next(gen)
-                LOGGER.debug('Task[%s] log: %s', task.id, message)
-                task.tail = TaskLog.create(task=task, message=message)
-                task.save()
+                task.logger(next(gen))
 
             except StopIteration as e:
                 return e.value
@@ -44,15 +41,15 @@ def _wrap_generator(task):
 
 # NOTE: timeout kwarg is consumed by this decorator.
 @threading_timeoutable()
-def _task_runner(task, pass_task_as=None):
+def _task_runner(task, task_kwarg=None):
     if inspect.isgeneratorfunction(task.function):
         runnable = _wrap_generator(task)
     else:
         runnable = task.function
 
     kwargs = task.kwargs.copy()
-    if pass_task_as:
-        kwargs[pass_task_as] = task
+    if task_kwarg:
+        kwargs[task_kwarg] = task
 
     result = None
     try:
@@ -61,6 +58,7 @@ def _task_runner(task, pass_task_as=None):
         LOGGER.debug('Task[%s] result: %s', task.id, result)
 
     except (TimeoutException, CancelledError) as e:
+        LOGGER.info('Task[%s] timeout/cancelled', task.id)
         result = e
 
     except Exception as e:
@@ -128,14 +126,17 @@ def stop_scheduler():
     CRON = None
 
 
-def defer(f, args=(), kwargs={}, timeout=None, pass_task_as=None):
+def defer(f, args=(), kwargs={}, timeout=None,
+          task_kwarg=None, pass_log_kwarg=None):
     "Defer a function to run as a task."
-    pass_task_as = 'task' if pass_task_as is True else pass_task_as
+    runner_kwargs = {
+        'timeout': timeout,
+        'task_kwarg': 'task' if task_kwarg is True else task_kwarg
+    }
     task = Task(function=f, args=args, kwargs=kwargs)
     task.save(force_insert=True)  # Save to get an id assigned.
     t = threading.Thread(target=_task_runner, args=(task,),
-        kwargs={'timeout': timeout, 'pass_task_as': pass_task_as},
-        daemon=False, name=str(task.id))
+        kwargs=runner_kwargs, daemon=False, name=str(task.id))
     t.start()
     LOGGER.debug('Task[%s] started', task.id)
     return task

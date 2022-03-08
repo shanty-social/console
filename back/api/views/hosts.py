@@ -22,16 +22,24 @@ CONTEXT.check_hostname = False
 CONTEXT.verify_mode = ssl.CERT_NONE
 
 
+def fix_port(port):
+    return int(port.split('/')[0])
+
+
 def _container_details(container):
     "Get details of container."
     NetworkSettings = container.attrs['NetworkSettings']
     Config = container.attrs['Config']
-    aliases, addresses = [], []
+    aliases, addresses, ports = [], [], []
     for network in NetworkSettings['Networks'].values():
         if network.get('Aliases'):
             aliases.extend(network['Aliases'])
         if network.get('IPAddress'):
             addresses.append(network['IPAddress'])
+    for port in Config.get('ExposedPorts', {}).keys():
+        port, type = port.split('/')
+        if type == 'tcp':
+            ports.append(int(port))
     return {
         'id': container.attrs['Id'],
         'created': container.attrs['Created'],
@@ -41,7 +49,7 @@ def _container_details(container):
         'mode': Config.get('HostConfig', {}).get('NetworkMode'),
         'aliases': aliases,
         'addresses': addresses,
-        'ports': list(Config.get('ExposedPorts', {}).keys()),
+        'ports': ports,
     }
 
 

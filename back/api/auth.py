@@ -1,50 +1,26 @@
 from functools import wraps
 
-from flask import g, session, request, abort
+from flask import session, request, abort
 
 from api.app import app
-from api.models import User
 
 
 def get_logged_in_user():
     "Get currently logged in user."
     if session.get('authenticated'):
-        if getattr(g, 'user', None):
-            return g.user
-
-        try:
-            user = User.get(
-                    User.active == True,  # noqa: E712
-                    User.id == session.get('user_pk')
-                )
-            return user
-
-        except User.DoesNotExist:
-            pass
+        return session.get('user')
 
 
-def log_in_user(username, password):
+def log_in_user(userinfo):
     "Log user in."
-    try:
-        user = User.get(
-            User.username == username, User.active == True)  # noqa: E712
-
-    except User.DoesNotExist:
-        abort(401)
-
-    if not user.check_password(password):
-        abort(401)
-
     session['authenticated'] = True
-    session['user_pk'] = user._pk
-    g.user = user
-    return user
+    session['user'] = userinfo
+    return userinfo
 
 
 def log_out_user():
     "Log user out."
     session.clear()
-    g.user = None
 
 
 def session_auth():

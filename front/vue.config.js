@@ -13,10 +13,16 @@ module.exports = {
     proxy: {
       "^/api/": {
         target: `http://${FLASK_HOST}:${FLASK_PORT}`,
+        headers: {
+          'Host': `http://${VUE_HOST}:${VUE_PORT}`,
+        },
         secure: false
       },
       "^/socket.io/": {
         target: `http://${FLASK_HOST}:${FLASK_PORT}`,
+        headers: {
+          'Host': `http://${VUE_HOST}:${VUE_PORT}`,
+        },
         secure: false,
         ws: true
       },

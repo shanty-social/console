@@ -1,7 +1,5 @@
 <template>
-  <p
-    class="mt-4"
-  >
+  <div>
     <v-chip
       v-for="(rating, i ) of ratings"
       :key="i"
@@ -40,21 +38,33 @@
         >HTTPS Port</v-text-field>
       </v-col>
       <v-col>
-        <v-btn>Configure automatically</v-btn>
+        <v-checkbox
+          v-model="form.auto"
+          label="Configure automatically"
+          @change="checkUPnP"
+        />
       </v-col>
     </v-row>
-  </p>
+    <HostAddress/>
+  </div>
 </template>
 
 <script>
+import HostAddress from '@/components/HostAddress'
+
 export default {
   name: 'TrafficDirect',
+
+  components: {
+    HostAddress,
+  },
 
   data () {
     return {
       form: {
         httpPort: 80,
-        httpsPort: 443
+        httpsPort: 443,
+        auto: false,
       },
       rules: {
         httpPort: [],
@@ -73,7 +83,13 @@ export default {
         'This method has no external dependencies and traffic flows over the shortest path',
       ]
     }
-  }
+  },
+
+  methods: {
+    checkUPnP () {
+
+    },
+  },
 }
 </script>
 

@@ -1,7 +1,5 @@
 <template>
-  <p
-    class="mt-4"
-  >
+  <div>
     <v-chip
       v-for="(rating, i ) of ratings"
       :key="i"
@@ -22,12 +20,19 @@
         v-text="item"
       />
     </ul>
-  </p>
+    <HostAddress/>
+  </div>
 </template>
 
 <script>
+import HostAddress from '@/components/HostAddress'
+
 export default {
   name: 'TrafficTunnel',
+
+  components: {
+    HostAddress,
+  },
 
   data () {
     return {

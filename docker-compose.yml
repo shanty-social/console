@@ -21,7 +21,7 @@ services:
       - www.shanty.local:192.168.100.200
     volumes:
       - ./back:/app:ro
-      - ./docker/console/entrypoint-app.sh:/entrypoint.sh:ro
+      - ./docker/console/entrypoint.sh:/entrypoint.sh:ro
       - /var/run/docker.sock:/var/run/sockets/docker.sock
 #      - /tmp/wpa_sock:/var/run/sockets
       - /tmp/certs:/var/lib/certs/
@@ -37,12 +37,11 @@ services:
       - FLASK_PORT=8008
       - FLASK_DB_PATH=/var/lib/console/db.sqlite3
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
-      - FLASK_SHANTY_REQUEST_TOKEN_URL=http://www.shanty.local:8000/api/oauth2/token/
-      - FLASK_SHANTY_API_BASE_URL=http://www.shanty.local:8000/api/
+      - FLASK_SHANTY_BASE_URL=http://www.shanty.local:8000/
       - CERT_DIR=/var/lib/certs
 
   console-front:
-    image: console/back
+    image: console/vue
     build:
       dockerfile: ./docker/console/Dockerfile
       target: node
@@ -52,7 +51,6 @@ services:
     network_mode: host
     volumes:
       - ./front:/front:ro
-      - ./docker/console/entrypoint-vue.sh:/entrypoint.sh:ro
     ports:
       - 8080:8080
     environment:

@@ -3,9 +3,11 @@
     @submit.prevent="onCreate"
     ref="form"
   >
+    <p class="text-h4">Traffic delivery</p>
     <p>You need to configure a method for traffic delivery.</p>
     <v-radio-group
       v-model="form.method"
+      @change="update"
     >
       <v-radio
         v-for="(name, i) of Object.keys(methods)"
@@ -20,25 +22,22 @@
       </v-radio>
     </v-radio-group>
     <component
-      v-if="selectedMethod"
       :is="selectedMethod.component"
+      v-if="selectedMethod"
+      v-model="form.options"
     />
     <v-alert
       v-if="error"
       dense outlined
       type="error"
     >{{ error }}</v-alert>
-    <v-btn type="submit">
-      Next
-      <v-icon>mdi-menu-right</v-icon>
-    </v-btn>
   </v-form>
 </template>
 
 <script>
 import TrafficDirect from '@/components/endpoint/TrafficDirect'
 import TrafficTunnel from '@/components/endpoint/TrafficTunnel'
-import TrafficTOR from '@/components/endpoint/TrafficTOR'
+import TrafficTor from '@/components/endpoint/TrafficTor'
 
 export default {
   name: 'Traffic',
@@ -46,18 +45,26 @@ export default {
   components: {
     TrafficDirect,
     TrafficTunnel,
-    TrafficTOR
+    TrafficTor,
+  },
+
+  props: {
+    value: {
+      type: Object,
+      default: null,
+    }
   },
 
   data () {
     return {
       form: {
-        method: 'Direct'
+        method: (this.value) ? this.value.method : null,
+        options: null,
       },
       methods: {
         Direct: { description: 'traffic is sent directly to your home router', component: TrafficDirect },
         Tunnel: { description: 'traffic is sent to homeland social servers then routed over an encrypted tunnel', component: TrafficTunnel },
-        TOR: { description: 'traffic arrives via the TOR network. This method requires users to use a special browser', component: TrafficTOR },
+        TOR: { description: 'traffic arrives via the TOR network. This method requires users to use a special browser', component: TrafficTor },
       },
       error: null,
     }
@@ -69,9 +76,20 @@ export default {
     }
   },
 
-  mounted () {
+  watch: {
+    'form.options' () {
+      this.update()
+    }
   },
 
+  methods: {
+    update () {
+      this.$emit('input', {
+        method: this.form.method,
+        options: this.form.options,
+      })
+    }
+  }
 }
 </script>
 

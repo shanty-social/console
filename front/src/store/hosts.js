@@ -4,33 +4,27 @@ export default {
   namespaced: true,
 
   state: {
-    data: null,
+    data: [],
   },
 
   getters: {
     data (state) {
       return state.data
     },
-
-    count (state) {
-      return (state.data) ? state.data.length : 0
-    }
   },
 
   mutations: {
-    update (state, data) {
+    set (state, data) {
       state.data = data
     }
   },
 
   actions: {
-    fetch({ state, commit }, force=false) {
-      if (!force && state.data !== null) return
-
+    fetch({ commit }) {
       axios
         .get('/api/hosts/')
         .then((r) => {
-          commit('update', r.data.objects)
+          commit('set', r.data.objects)
         })
         .catch(console.error)
     }

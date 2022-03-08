@@ -33,19 +33,23 @@ DNS_PROVIDERS = {
     'afraid': {
         'url': 'http://freedns.afraid.org',
         'options': ['User', 'Password'],
+        'description': 'Free DNS Hosting, Dynamic DNS Hosting, Static DNS Hosting, subdomain and domain hosting.',
         'nameservers': 'ns1.afraid.org,ns2.afraid.org,ns3.afraid.org,ns4.afraid.org',
     },
     'cloudflare': {
         'url': 'https://www.cloudflare.com',
         'options': ['API_Token', 'Email', 'Zone'],
+        'description': 'Cloudflare DNS is an enterprise-grade authoritative DNS service that offers the fastest response time, unparalleled redundancy, and advanced security with built-in DDoS mitigation and DNSSEC.',
     },
     'hurricane': {
         'url': 'https://dns.he.net',
         'options': ['Password'],
+        'description': 'Hurricane Electric Free DNS Hosting portal. This tool will allow you to easily manage and maintain your forward and reverse DNS.',
     },
     'strato': {
         'url': 'https://www.strato.com',
         'options': ['User', 'Password'],
+        'description': 'STRATO is the reliable web hosting provider for anyone seeking online success. We make web hosting fair and simple – at an unbeatable price and without unnecessary frills.',
         'nameservers': 'ns1.strato.de,ns2.strato.de,ns4.strato.de',
     },
 }
@@ -63,10 +67,6 @@ def _get_models():
 def create_tables():
     "Create database tables."
     db.database.create_tables(_get_models(), safe=True)
-    # User.get_or_create(
-    #     username='admin',
-    #     defaults={'name': 'Admin', 'password': make_password('password')}
-    # )
     uuid, created = Setting.get_or_create(
         name='CONSOLE_UUID', defaults={'value': str(uuid4())})
 
@@ -140,6 +140,13 @@ class Setting(db.Model):
             .get()
         return setting.value
 
+    def set_setting(name, value, group=DEFAULT_SETTING_GROUP):
+        setting, created = Setting.get_or_create(
+            name=name, defaults={'value': value})
+        if not created:
+            setting.value = value
+            setting.save()
+
 
 class Task(SignalMixin, db.Model):
     "Background task."
@@ -168,13 +175,18 @@ class Task(SignalMixin, db.Model):
             raise task.result
         return task.result
 
-    def cancel(self):
+    def cancel(self, timeout=None):
         from api.tasks import CancelledError, find_thread
         LOGGER.debug('Task[%s] Cancelling', self.id)
         t = find_thread(str(self.id))
         if t is None:
             return
         async_raise(t.ident, CancelledError)
+        t.join(timeout=timeout)
+
+    def delete_instance(self, *args, **kwargs):
+        self.cancel()
+        super().delete_instance(*args, **kwargs)
 
     def wait(self, timeout=None):
         from api.tasks import find_thread
@@ -193,6 +205,15 @@ class Task(SignalMixin, db.Model):
     def refresh(self):
         return type(self).get(self._pk_expr())
 
+    def logger(self, message):
+        LOGGER.debug('%s.log: %s', self, message)
+        try:
+            self.tail = TaskLog.create(task=self, message=message)
+            self.save()
+
+        except Exception:
+            LOGGER.exception()
+
 
 class TaskLog(db.Model):
     "Background task log output."
@@ -204,20 +225,6 @@ class TaskLog(db.Model):
         return f'<TaskLog {self.message}>'
 
 
-class User(db.Model):
-    "User model for local authentication."
-    username = CharField(null=False, unique=True)
-    password = CharField(null=False)
-    name = CharField(null=True)
-    active = BooleanField(default=True)
-
-    def set_password(self, password):
-        self.password = make_password(password)
-
-    def check_password(self, password):
-        return check_password(password, self.password)
-
-
 class Domain(db.Model):
     "Domain model representing dns domain."
     name = CharField(null=False, unique=True)
@@ -227,6 +234,7 @@ class Domain(db.Model):
             (name, name) for name in DNS_PROVIDERS.keys()
         ])
     options = JSONField()
+    created = DateTimeField(default=datetime.now)
 
     @staticmethod
     def get_available_options(type, provider):
@@ -253,6 +261,7 @@ class Endpoint(db.Model):
     path = CharField(null=False, default='/')
     type = CharField(null=False, choices=ENDPOINT_TYPES.items())
     domain = ForeignKeyField(Domain, null=False, backref='entrypoints')
+    created = DateTimeField(default=datetime.now)
 
 
 class Torkey(db.Model):
@@ -261,6 +270,15 @@ class Torkey(db.Model):
     hostname = CharField(null=False, unique=True)
     public = CharField(null=False)
     secret = CharField(null=False)
+    created = DateTimeField(default=datetime.now)
+
+
+class Message(SignalMixin, db.Model):
+    "Message to user"
+    subject = CharField(null=False)
+    body = TextField(null=False)
+    read = BooleanField(default=False)
+    created = DateTimeField(default=datetime.now)
 
 
 @post_save(sender=Task)
@@ -269,3 +287,11 @@ def on_task_event(sender, instance, created):
     from api.views.tasks import task_preparer
     socketio.emit('models.task.post_save',
         task_preparer.prepare(instance.refresh()), broadcast=True)
+
+
+@post_save(sender=Message)
+def on_task_event(sender, instance, created):
+    "Publish task events to socket.io."
+    from api.views.messages import message_preparer
+    socketio.emit('models.message.post_save',
+        message_preparer.prepare(instance), broadcast=True)

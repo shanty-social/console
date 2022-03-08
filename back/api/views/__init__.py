@@ -1,7 +1,9 @@
+from urllib.parse import urlparse, urlunparse
 from collections import defaultdict
 
 from flask import (
-    make_response, jsonify, request, send_from_directory, abort as _abort
+    make_response, jsonify, request, send_from_directory, abort as _abort,
+    url_for as _url_for
 )
 from restless.fl import FlaskResource
 from restless.serializers import Serializer, JSONSerializer
@@ -11,7 +13,18 @@ from werkzeug.exceptions import HTTPException
 from wtforms import Form as _Form
 
 from api.auth import session_auth
+from api.config import EXTERNAL_HOST
 
+
+def url_for(*args, **kwargs):
+    url = urlparse(_url_for(*args, **kwargs))
+    return urlunparse(url._replace(
+        scheme=EXTERNAL_HOST.scheme,
+        netloc=f'{EXTERNAL_HOST.hostname}:{EXTERNAL_HOST.port}'))
+
+
+def url_redir(path):
+    return urlunparse(EXTERNAL_HOST._replace(path=path))
 
 
 def abort(code, obj=None):

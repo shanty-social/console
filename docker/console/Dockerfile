@@ -8,7 +8,7 @@ ENV MKP224O_TAG=v1.5.0
 # Add the python application, be sure to exclude dotfiles.
 ADD ./back/api /app/
 ADD ./back/Pipfile* /app/
-ADD ./docker/console/entrypoint-app.sh /entrypoint.sh
+ADD ./docker/console/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Install Python
@@ -31,24 +31,25 @@ RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
+
 FROM python AS node
 
-ADD ./docker/console/entrypoint-vue.sh /entrypoint.sh
 ADD ./front /front
-RUN chmod +x /entrypoint.sh
 
 # Install Node
 WORKDIR /front
 RUN apk add --no-cache nodejs npm && \
     npm i
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+ENTRYPOINT [ "npm", "run", "serve" ]
+
 
 FROM node AS build
 
 # Build vue application.
 WORKDIR /front
 RUN npm run build
+
 
 FROM python AS final
 

@@ -16,7 +16,9 @@
       </div>
 
       <v-spacer></v-spacer>
-      <account/>
+      <Messages/>
+      <Tasks/>
+      <Account/>
     </v-app-bar>
 
     <v-main>
@@ -42,12 +44,16 @@
 
 <script>
 import Account from '@/components/Account'
+import Tasks from '@/components/Tasks'
+import Messages from '@/components/Messages'
 
 export default {
   name: 'App',
 
   components: {
-    Account
+    Account,
+    Tasks,
+    Messages,
   }
 }
 </script>

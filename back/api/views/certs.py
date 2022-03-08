@@ -1,5 +1,3 @@
-import certsign
-
 from flask import send_from_directory
 
 from api.views import BaseResource
@@ -33,12 +31,3 @@ def acme(path):
 
 class CertResource(BaseResource):
     "Allows new ceritficate requests, and provides access to certs."
-    def is_authenticated(self):
-        # Allow read access with token auth.
-        if super().is_authenticated():
-            return True
-
-        if self.request_method() == 'GET' and token_auth():
-            return True
-
-        return False

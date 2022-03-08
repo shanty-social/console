@@ -70,7 +70,7 @@ class TaskResource(BaseResource):
         "List all tasks."
         status = request.args.get('status')
         function = request.args.get('function')
-        tasks = Task.select()
+        tasks = Task.select().join(TaskLog)
         if status == 'active':
             tasks = tasks.where(Task.completed.is_null(True))
         elif status == 'complete':

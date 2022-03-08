@@ -19,10 +19,6 @@ export default {
     },
 
     add (state, data) {
-      const index = state.data.findIndex(o => o.id === data.id)
-      if (index !== -1) {
-        state.data.splice(index, 1)
-      }
       state.data.push(data)
     },
 
@@ -35,7 +31,7 @@ export default {
   actions: {
     fetch({ commit }) {
       axios
-        .get('/api/tasks/')
+        .get('/api/messages/')
         .then((r) => {
           commit('set', r.data.objects)
         })
@@ -44,7 +40,7 @@ export default {
 
     delete ({ commit }, id) {
       axios
-        .delete(`/api/tasks/${id}/`)
+        .delete(`/api/messages/${id}/`)
         .then(() => {
           commit('del', id)
         })
