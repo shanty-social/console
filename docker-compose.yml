@@ -58,3 +58,9 @@ services:
       - FLASK_PORT=8008
       - VUE_HOST=0.0.0.0
       - VUE_PORT=8080
+
+  console-tor:
+    image: console/tor
+    build:
+      dockerfile: ./docker/tor/Dockerfile
+      context: ./

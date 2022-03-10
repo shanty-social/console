@@ -45,6 +45,12 @@ jobs:
             --tag ${{secrets.DOCKER_USER}}/console:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
+          docker buildx build -f docker/tor/Dockerfile \
+            --push \
+            --tag ${{secrets.DOCKER_USER}}/tor:latest \
+            --tag ${{secrets.DOCKER_USER}}/tor:${{env.tag}} \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 .
+
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v2
         with:
