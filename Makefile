@@ -48,6 +48,10 @@ tarball:
 			  -v ${PWD}/output:/output tarball
 
 
+.PHONY: final
+final:
+	${DOCKER} build . -f docker/console/Dockerfile --target=final -t console-final 
+
 .PHONY: clean
 clean:
 	${DOCKER_COMPOSE} rm --force

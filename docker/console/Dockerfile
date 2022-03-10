@@ -6,14 +6,14 @@ ENV CERT_DIR=${CERT_DIR}
 ENV MKP224O_TAG=v1.5.0
 
 # Add the python application, be sure to exclude dotfiles.
-ADD ./back/api /app/
+ADD ./back/api /app/api/
 ADD ./back/Pipfile* /app/
 ADD ./docker/console/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Install Python
 WORKDIR /app
-RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography \
+RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
                                      python3-dev git libsodium libsodium-dev autoconf \
                                      libffi libffi-dev musl-dev pcre2 pcre2-dev openssl openssl-dev && \
     pip install wheel pipenv && \
@@ -54,8 +54,8 @@ RUN npm run build
 FROM python AS final
 
 # Copy vue static files.
-COPY --from=build /front/dist/static /app/static
-COPY --from=build /front/dist/index.html /app/templates/
+COPY --from=build /front/dist/assets /app/assets
+COPY --from=build /front/dist/index.html* /app/assets/
 
 USER nobody
 

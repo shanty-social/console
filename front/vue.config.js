@@ -1,3 +1,5 @@
+const CompressionPlugin = require('compression-webpack-plugin');
+
 const VUE_HOST = process.env.VUE_HOST || '0.0.0.0';
 const VUE_PORT = parseInt(process.env.VUE_PORT || 8080, 10);
 
@@ -30,5 +32,8 @@ module.exports = {
   },
   transpileDependencies: [
     'vuetify'
-  ]
+  ],
+  configureWebpack: {
+    plugins: [new CompressionPlugin()]
+  }
 }

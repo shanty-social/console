@@ -1,5 +1,4 @@
 from api.app import app
-from api.views import root
 from api.views.oauth import start, end, authorize, providers, whoami
 from api.views.settings import SettingResource  # noqa: E402
 from api.views.tasks import TaskResource, TaskLogResource  # noqa: E402
@@ -14,7 +13,6 @@ from api.views.tor import TorResource
 # API endpoints.
 # Set up urls and views.
 # Home page (in production mode, vue application.)
-app.add_url_rule('/', view_func=root)
 app.add_url_rule('/api/whoami/', methods=['GET'], view_func=whoami)
 app.add_url_rule(
     '/api/oauth/', methods=['GET'], view_func=providers)
