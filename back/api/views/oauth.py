@@ -1,8 +1,8 @@
-from flask import redirect, session, request, abort, jsonify, g
+from flask import redirect, session, request, abort, jsonify
 
 from api.app import oauth, update_token, delete_token
 from api.auth import (
-    requires_auth, log_in_user, log_out_user, get_logged_in_user,
+    log_in_user, log_out_user, get_logged_in_user,
 )
 from api.tasks import cron
 from api.views import url_for, url_redir
@@ -52,7 +52,7 @@ def authorize(service_name):
     update_token('shanty', token)
     # Get console token.
     r = service.post(
-        '/api/consoles/', data={ 'uuid': Setting.get_setting('CONSOLE_UUID')})
+        '/api/consoles/', data={'uuid': Setting.get_setting('CONSOLE_UUID')})
     if r.status_code == 201:
         Setting.set_setting('CONSOLE_TOKEN', r.json().get('token'))
     log_in_user(token.get('userinfo'))

@@ -114,13 +114,13 @@ class DomainResource(BaseResource):
     def shared(self):
         r = oauth.shanty.get('/api/hosts/shared/')
         if r.status_code != 200:
-            abort(r.status_code, { 'message': r.reason })
+            abort(r.status_code, {'message': r.reason})
         return r.json()
 
     @skip_prepare
     def check(self):
         name = self.data.get('name')
         if not name:
-            abort(400, { 'message': 'Invalid request' })
-        r = oauth.shanty.post('/api/hosts/check/', data={ 'name': name })
-        abort(r.status_code, { 'message': r.reason })
+            abort(400, {'message': 'Invalid request'})
+        r = oauth.shanty.post('/api/hosts/check/', data={'name': name})
+        abort(r.status_code, {'message': r.reason})

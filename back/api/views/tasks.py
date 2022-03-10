@@ -1,14 +1,13 @@
 import logging
 from datetime import datetime, timedelta
 
-from flask import request, json
+from flask import request
 from flask_peewee.utils import get_object_or_404
 from restless.preparers import FieldsPreparer
 
 from api.models import Task, TaskLog
 from api.views import BaseResource
 from api.tasks import cron
-from api.app import socketio
 
 
 LOGGER = logging.getLogger(__name__)
@@ -83,16 +82,16 @@ class TaskResource(BaseResource):
         "Retrieve single task."
         return get_object_or_404(Task, Task.id == pk)
 
+    def delete(self, pk):
+        "Delete task."
+        task = get_object_or_404(Task, Task.id == pk)
+        task.delete_instance()
+
     def cancel(self, pk):
         "Cancel task."
         task = get_object_or_404(Task, Task.id == pk)
         task.cancel()
         return task
-
-    def delete(self, pk):
-        "Delete task."
-        task = get_object_or_404(Task, Task.id == pk)
-        task.delete_instance()
 
 
 class TaskLogResource(BaseResource):

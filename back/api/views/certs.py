@@ -1,9 +1,7 @@
 from flask import send_from_directory
 
 from api.views import BaseResource
-from api.auth import token_auth
 from api.tasks import cron
-from api.config import CERT_DIR
 
 
 ACME_DIR = '/var/tmp/acme/'

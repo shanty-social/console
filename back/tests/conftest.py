@@ -18,7 +18,7 @@ config.TESTING = True
 
 from api import urls
 from api.app import db, app
-from api.models import create_tables, drop_tables, User
+from api.models import create_tables, drop_tables
 
 @pytest.fixture(autouse=True)
 def database():
@@ -41,11 +41,6 @@ def authenticated():
     with app.test_client() as client:
         with client.session_transaction() as session:
             session['authenticated'] = True
-            session['user_pk'] = 1
+            session['user'] = {}
         with app.app_context():
-            g.user = User.select().where(User.id==1).get()
-        try:
             yield client
-
-        finally:
-            g.user = None

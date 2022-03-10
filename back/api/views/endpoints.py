@@ -78,7 +78,8 @@ class EndpointResource(BaseResource):
         if type:
             endpoints = endpoints.where(Endpoint.type == type)
         if domain_name:
-            endpoints = endpoints.join(Domains).where(Domain.name == domain_name)
+            endpoints = endpoints.join(Domain) \
+                                 .where(Domain.name == domain_name)
         if host:
             endpoints = endpoints.where(Endpoint.host == host)
         return endpoints
@@ -89,7 +90,8 @@ class EndpointResource(BaseResource):
 
     def create(self):
         "Create new endpoint(s)."
-        self.data['domain'] = get_object_or_404(Domain, Domain.name == self.data.get('domain'))
+        self.data['domain'] = get_object_or_404(
+            Domain, Domain.name == self.data.get('domain'))
         form = EndpointForm(self.data)
         if not form.validate():
             abort(400, form.errors)

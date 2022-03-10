@@ -7,9 +7,7 @@ from datetime import datetime
 import pycron
 from stopit import threading_timeoutable, TimeoutException
 
-from playhouse.signals import post_save
-
-from api.models import Task, TaskLog
+from api.models import Task
 
 
 LOGGER = logging.getLogger(__name__)
@@ -136,7 +134,7 @@ def defer(f, args=(), kwargs={}, timeout=None,
     task = Task(function=f, args=args, kwargs=kwargs)
     task.save(force_insert=True)  # Save to get an id assigned.
     t = threading.Thread(target=_task_runner, args=(task,),
-        kwargs=runner_kwargs, daemon=False, name=str(task.id))
+                         kwargs=runner_kwargs, daemon=False, name=str(task.id))
     t.start()
     LOGGER.debug('Task[%s] started', task.id)
     return task

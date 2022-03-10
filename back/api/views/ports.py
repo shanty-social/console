@@ -4,8 +4,8 @@ import socket
 import upnpy
 from upnpy.exceptions import ActionNotFoundError
 
+from flask import request
 from restless.resources import skip_prepare
-
 import wtforms
 from wtforms.validators import InputRequired
 

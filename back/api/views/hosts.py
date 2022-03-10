@@ -1,7 +1,6 @@
 import ssl
 import socket
 import logging
-from pprint import pprint
 
 import docker
 
@@ -116,14 +115,15 @@ class HostResource(BaseResource):
 
     def list(self):
         "List potential docker hosts/ports."
-        filters = { }
-        kwargs = { 'all': False, 'filters': filters }
+        filters = {}
+        kwargs = {'all': False, 'filters': filters}
         try:
             filters['status'] = request.args['status']
         except KeyError:
             pass
         d = docker.DockerClient(base_url=f'unix://{DOCKER_SOCKET_PATH}')
         containers = d.containers.list(**kwargs)
+        # from pprint import pprint
         # pprint(containers[0].attrs)
         return [
             _container_details(c) for c in containers
@@ -146,7 +146,7 @@ class HostResource(BaseResource):
         try:
             ports = map(int, self.data['ports'])
 
-        except KeyError as e:
+        except KeyError:
             ports = range(1, 65535)
 
         except ValueError:
@@ -166,7 +166,7 @@ class HostResource(BaseResource):
                 LOGGER.debug('Connected to %s:%i', host, port)
                 results_ports[port] = _sniff(s, host, port)
 
-            except socket.error as e:
+            except socket.error:
                 if not only_open:
                     results_ports[port] = 'closed'
                 continue

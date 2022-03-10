@@ -20,7 +20,7 @@ services:
     extra_hosts:
       - www.shanty.local:192.168.100.200
     volumes:
-      - ./back:/app:ro
+      - ./back/api:/app/api:ro
       - ./docker/console/entrypoint.sh:/entrypoint.sh:ro
       - /var/run/docker.sock:/var/run/sockets/docker.sock
 #      - /tmp/wpa_sock:/var/run/sockets

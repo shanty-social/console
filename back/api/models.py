@@ -9,9 +9,10 @@ from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
     TextField, BooleanField, UUIDField, IntegerField,
 )
-from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
-from playhouse.signals import Signal, pre_save, post_save, pre_delete, post_delete, pre_init
+from playhouse.signals import (
+    pre_save, post_save, pre_delete, post_delete, pre_init,
+)
 from stopit import async_raise
 
 from api.app import db, socketio
@@ -33,23 +34,33 @@ DNS_PROVIDERS = {
     'afraid': {
         'url': 'http://freedns.afraid.org',
         'options': ['User', 'Password'],
-        'description': 'Free DNS Hosting, Dynamic DNS Hosting, Static DNS Hosting, subdomain and domain hosting.',
-        'nameservers': 'ns1.afraid.org,ns2.afraid.org,ns3.afraid.org,ns4.afraid.org',
+        'description': 'Free DNS Hosting, Dynamic DNS Hosting, Static DNS '
+                       'Hosting, subdomain and domain hosting.',
+        'nameservers': 'ns1.afraid.org,ns2.afraid.org,ns3.afraid.org,'
+                       'ns4.afraid.org',
     },
     'cloudflare': {
         'url': 'https://www.cloudflare.com',
         'options': ['API_Token', 'Email', 'Zone'],
-        'description': 'Cloudflare DNS is an enterprise-grade authoritative DNS service that offers the fastest response time, unparalleled redundancy, and advanced security with built-in DDoS mitigation and DNSSEC.',
+        'description': 'Cloudflare DNS is an enterprise-grade authoritative '
+                       'DNS service that offers the fastest response time, '
+                       'unparalleled redundancy, and advanced security with '
+                       'built-in DDoS mitigation and DNSSEC.',
     },
     'hurricane': {
         'url': 'https://dns.he.net',
         'options': ['Password'],
-        'description': 'Hurricane Electric Free DNS Hosting portal. This tool will allow you to easily manage and maintain your forward and reverse DNS.',
+        'description': 'Hurricane Electric Free DNS Hosting portal. This tool '
+                       'will allow you to easily manage and maintain your '
+                       'forward and reverse DNS.',
     },
     'strato': {
         'url': 'https://www.strato.com',
         'options': ['User', 'Password'],
-        'description': 'STRATO is the reliable web hosting provider for anyone seeking online success. We make web hosting fair and simple – at an unbeatable price and without unnecessary frills.',
+        'description': 'STRATO is the reliable web hosting provider for anyone'
+                       ' seeking online success. We make web hosting fair and '
+                       'simple – at an unbeatable price and without '
+                       'unnecessary frills.',
         'nameservers': 'ns1.strato.de,ns2.strato.de,ns4.strato.de',
     },
 }
@@ -121,7 +132,7 @@ class SignalMixin:
         ret = super().delete_instance(*args, **kwargs)
         post_delete.send(self)
         return ret
-    
+
 
 class Setting(db.Model):
     "Store settings."
@@ -265,7 +276,10 @@ class Endpoint(db.Model):
 
 
 class Torkey(db.Model):
-    "Tor key representing key pair and resulting hostname (prefix denotes vanity address)."
+    """
+    Tor key representing key pair and resulting hostname (prefix denotes
+    vanity address).
+    """
     prefix = CharField(null=True)
     hostname = CharField(null=False, unique=True)
     public = CharField(null=False)
@@ -286,12 +300,12 @@ def on_task_event(sender, instance, created):
     "Publish task events to socket.io."
     from api.views.tasks import task_preparer
     socketio.emit('models.task.post_save',
-        task_preparer.prepare(instance.refresh()), broadcast=True)
+                  task_preparer.prepare(instance.refresh()), broadcast=True)
 
 
 @post_save(sender=Message)
-def on_task_event(sender, instance, created):
+def on_message_event(sender, instance, created):
     "Publish task events to socket.io."
     from api.views.messages import message_preparer
     socketio.emit('models.message.post_save',
-        message_preparer.prepare(instance), broadcast=True)
+                  message_preparer.prepare(instance), broadcast=True)

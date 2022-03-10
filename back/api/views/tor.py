@@ -1,9 +1,5 @@
-import subprocess
-from io import BytesIO
-
 from mkpy224o import find_keys
 
-from flask import request
 from flask_peewee.utils import get_object_or_404
 
 from restless.preparers import FieldsPreparer
@@ -11,7 +7,7 @@ from restless.resources import skip_prepare
 
 from api.views import BaseResource
 from api.views.tasks import task_preparer
-from api.models import Task, TaskLog, Torkey
+from api.models import Torkey
 from api.tasks import defer
 
 

@@ -25,7 +25,8 @@ app.add_url_rule(
 app.add_url_rule(
     '/api/oauth/<string:service_name>/authorize/', methods=['GET'],
     view_func=authorize)
-app.add_url_rule('/.well-know/acme-challenge/', methods=['GET'], view_func=acme)
+app.add_url_rule(
+    '/.well-know/acme-challenge/', methods=['GET'], view_func=acme)
 HostResource.add_url_rules(app, rule_prefix='/api/hosts/')
 SettingResource.add_url_rules(app, rule_prefix='/api/settings/')
 TaskResource.add_url_rules(app, rule_prefix='/api/tasks/')
