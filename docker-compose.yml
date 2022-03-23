@@ -19,9 +19,11 @@ services:
     network_mode: host
     extra_hosts:
       - www.shanty.local:192.168.100.200
+      - ssh.shanty.local:192.168.100.201
     volumes:
       - ./back/api:/app/api:ro
       - ./docker/console/entrypoint.sh:/entrypoint.sh:ro
+      - ./docker/console/client.key:/var/lib/console/client.key:ro
       - /var/run/docker.sock:/var/run/sockets/docker.sock
 #      - /tmp/wpa_sock:/var/run/sockets
       - /tmp/certs:/var/lib/certs/
@@ -39,6 +41,11 @@ services:
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
       - FLASK_SHANTY_BASE_URL=http://www.shanty.local:8000/
       - CERT_DIR=/var/lib/certs
+      - SSH_HOST=ssh.shanty.local
+      - SSH_PORT=2222
+      - SSH_USER=0ac99280-5233-47d1-a43b-b02379e832d0
+      - SSH_KEY_FILE=/var/lib/console/client.key
+      - LOG_LEVEL=debug
 
   console-front:
     image: console/vue

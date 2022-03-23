@@ -6,14 +6,15 @@ from datetime import datetime
 
 import pycron
 from stopit import threading_timeoutable, TimeoutException
+from conduit_client import ssh
 
-from api.models import Task
+from api.models import Task, Setting
+from api.config import SSH_KEY_FILE
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
-CRON = None
 CRONTAB = []
 
 
@@ -90,9 +91,9 @@ class RepeatTimer(threading.Timer):
 
     def run(self):
         while True:
-            self.finished.wait(self.interval)
-            if self.finished.is_set():
+            if self.finished.wait(self.interval):
                 break
+
             try:
                 self.function(*self.args, **self.kwargs)
 
@@ -100,9 +101,8 @@ class RepeatTimer(threading.Timer):
                 LOGGER.exception('Error in timer function.')
 
 
-def start_scheduler(interval=60.0):
-    "Start a scheduler to run schedule cron tasks."
-    global CRON
+def start_background_tasks():
+    console_uuid = Setting.get_setting('CONSOLE_UUID')
 
     def _scheduler():
         LOGGER.debug('Scheduler checking %i tasks', len(CRONTAB))
@@ -112,16 +112,14 @@ def start_scheduler(interval=60.0):
                     'Schedule %s is now, executing task %s', schedule, f)
                 defer(f, args, kwargs)
 
+    def _ssh_manager():
+        manager = ssh.create_manager(user=console_uuid, key=SSH_KEY_FILE)
+        # TODO: add tunnels
+
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
-    CRON = RepeatTimer(interval, _scheduler, daemon=True)
-    CRON.start()
-
-
-def stop_scheduler():
-    "Terminate the scheduler."
-    global CRON
-    CRON.cancel()
-    CRON = None
+    RepeatTimer(60.0, _scheduler, daemon=True)
+    LOGGER.info('Starting ssh manager')
+    RepeatTimer(15.0, _ssh_manager, daemon=True)
 
 
 def defer(f, args=(), kwargs={}, timeout=None,

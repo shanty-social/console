@@ -8,6 +8,10 @@ FLASK_DB_PATH=${FLASK_DB_PATH:-/tmp/db.sqlite3}
 FLASK_HOST=${FLASK_HOST:-0.0.0.0}
 FLASK_PORT=${FLASK_PORT:-8000}
 
+if [ ! -f "${SSH_KEY_FILE}" ]; then
+    ssh-keygen -N '' -f "${SSH_KEY_FILE}"
+fi
+
 if [ ! -z "${FLASK_DEBUG}" ]; then
     UWSGI_ARGS="--py-autoreload=1"
 fi

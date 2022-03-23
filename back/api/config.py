@@ -76,3 +76,5 @@ AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
 CERT_DIR = os.getenv('CERT_DIR', '/var/lib/certs/')
 
 EXTERNAL_HOST = urlparse(os.getenv('EXTERNAL_HOST', 'http://localhost:8080'))
+
+SSH_KEY_FILE = os.getenv('SSH_KEY_FILE', '/var/lib/console/client.key')

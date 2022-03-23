@@ -5,6 +5,22 @@ ARG CERT_DIR=/var/lib/certs
 ENV CERT_DIR=${CERT_DIR}
 ENV MKP224O_TAG=v1.5.0
 
+ENV FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant \
+    FLASK_NDS_SOCKET_PATH=/var/run/sockets/nds \
+    FLASK_DOCKER_SOCKET_PATH=/var/run/sockets/docker.sock \
+    FLASK_LOG_LEVEL=DEBUG \
+    FLASK_DEBUG=true \
+    FLASK_HOST=0.0.0.0 \
+    FLASK_PORT=8008 \
+    FLASK_DB_PATH=/var/lib/console/db.sqlite3 \
+    FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache \
+    FLASK_SHANTY_BASE_URL=https://www.homeland-social.com/ \
+    CERT_DIR=/var/lib/certs \
+    SSH_HOST=ssh.homeland-social.com \
+    SSH_PORT=2222 \
+    SSH_USER= \
+    SSH_KEY_FILE=/var/lib/console/client.key
+
 # Add the python application, be sure to exclude dotfiles.
 ADD ./back/api /app/api/
 ADD ./back/Pipfile* /app/
@@ -14,8 +30,8 @@ RUN chmod +x /entrypoint.sh
 # Install Python
 WORKDIR /app
 RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
-                                     python3-dev git libsodium libsodium-dev autoconf \
-                                     libffi libffi-dev musl-dev pcre2 pcre2-dev openssl openssl-dev && \
+                       python3-dev git libsodium libsodium-dev autoconf libffi libffi-dev \
+                       musl-dev pcre2 pcre2-dev openssl openssl-dev && \
     pip install wheel pipenv && \
     pipenv install --system --skip-lock && \
     mkdir -p /usr/local/src && cd /usr/local/src && \
