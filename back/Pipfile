@@ -24,7 +24,7 @@ pyyaml = "*"
 mkpy224o = "==0.1.4"
 gevent = "*"
 acme = "*"
-conduit-client = {subdirectory = "client", git = "https://github.com/shanty-social/conduit.git"}
+conduit-client = {subdirectory = "client", ref = "024efcd24f9025074668efca7257a37945824980", git = "https://github.com/shanty-social/conduit.git"}
 
 [dev-packages]
 flake8 = "*"

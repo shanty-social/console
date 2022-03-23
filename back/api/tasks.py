@@ -91,17 +91,17 @@ class RepeatTimer(threading.Timer):
 
     def run(self):
         while True:
-            if self.finished.wait(self.interval):
-                break
-
             try:
                 self.function(*self.args, **self.kwargs)
 
             except Exception:
                 LOGGER.exception('Error in timer function.')
 
+            if self.finished.wait(self.interval):
+                break
 
-def start_background_tasks():
+
+def start_background_tasks(tasks_interval=60.0, ssh_interval=15.0):
     console_uuid = Setting.get_setting('CONSOLE_UUID')
 
     def _scheduler():
@@ -117,9 +117,9 @@ def start_background_tasks():
         # TODO: add tunnels
 
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
-    RepeatTimer(60.0, _scheduler, daemon=True)
+    RepeatTimer(tasks_interval, _scheduler, daemon=True).start()
     LOGGER.info('Starting ssh manager')
-    RepeatTimer(15.0, _ssh_manager, daemon=True)
+    RepeatTimer(ssh_interval, _ssh_manager, daemon=True).start()
 
 
 def defer(f, args=(), kwargs={}, timeout=None,
