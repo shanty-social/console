@@ -78,8 +78,7 @@ def test_cron():
     assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'
 
 
-#def test_task_exception(authenticated):
-#    t = Task(function=test_task_exception, result=Exception('BOOM'))
-#    t.save()
-#    r = authenticated.get('/api/tasks/')
-#    assert r.status_code == 200, 'Invalid status code'
+def test_task_exception(authenticated):
+    t = Task.create(function=test_task_exception, result=Exception('BOOM'))
+    r = authenticated.get('/api/tasks/')
+    assert r.status_code == 200, 'Invalid status code'
