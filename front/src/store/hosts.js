@@ -11,6 +11,10 @@ export default {
     data (state) {
       return state.data
     },
+
+    count (state) {
+      return state.data ? state.data.length : 0
+    }
   },
 
   mutations: {

@@ -5,7 +5,6 @@ import Endpoints from './endpoints'
 import Hosts from './hosts'
 import Socket from './socket'
 import Tasks from './tasks'
-import Tor from './tor'
 import Messages from './messages'
 
 Vue.use(Vuex)
@@ -17,7 +16,6 @@ export default new Vuex.Store({
     hosts: Hosts,
     socket: Socket,
     tasks: Tasks,
-    tor: Tor,
     messages: Messages,
   }
 })

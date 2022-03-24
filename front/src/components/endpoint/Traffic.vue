@@ -35,17 +35,13 @@
 </template>
 
 <script>
-import TrafficDirect from '@/components/endpoint/TrafficDirect'
 import TrafficTunnel from '@/components/endpoint/TrafficTunnel'
-import TrafficTor from '@/components/endpoint/TrafficTor'
 
 export default {
   name: 'Traffic',
 
   components: {
-    TrafficDirect,
     TrafficTunnel,
-    TrafficTor,
   },
 
   props: {
@@ -62,9 +58,7 @@ export default {
         options: null,
       },
       methods: {
-        Direct: { description: 'traffic is sent directly to your home router', component: TrafficDirect },
         Tunnel: { description: 'traffic is sent to homeland social servers then routed over an encrypted tunnel', component: TrafficTunnel },
-        TOR: { description: 'traffic arrives via the TOR network. This method requires users to use a special browser', component: TrafficTor },
       },
       error: null,
     }

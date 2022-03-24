@@ -9,9 +9,6 @@ from wtfpeewee.orm import model_form
 
 from api.views import BaseResource, Form, abort
 from api.models import Endpoint, Domain
-from api.tasks import cron
-from api.views.ports import _open_port, _get_gateway
-from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -19,24 +16,6 @@ LOGGER.addHandler(logging.NullHandler())
 
 
 EndpointForm = model_form(Endpoint, base_class=Form)
-
-
-@cron('*/5 * * * *')
-def _check_endpoint_ports():
-    try:
-        gateway, service = _get_gateway()
-
-    except Exception:
-        LOGGER.exception('Error getting gateway')
-        return
-
-    for endpoint in Endpoint.select(Endpoint.type == 'direct'):
-        if endpoint.http_port:
-            _open_port(
-                gateway, service, 80, endpoint.http_port, endpoint.host)
-        if endpoint.https_port:
-            _open_port(
-                gateway, service, 443, endpoint.https_port, endpoint.host)
 
 
 domain_preparer = FieldsPreparer(fields={
@@ -58,16 +37,6 @@ class EndpointResource(BaseResource):
         'type': 'type',
         'domain': SubPreparer('domain', domain_preparer),
     })
-
-    def is_authenticated(self):
-        # Allow read access with token auth.
-        if super().is_authenticated():
-            return True
-
-        if self.request_method() == 'GET' and token_auth():
-            return True
-
-        return False
 
     def list(self):
         "List all endpoints."

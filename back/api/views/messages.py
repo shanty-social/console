@@ -8,7 +8,6 @@ from wtfpeewee.orm import model_form
 
 from api.models import Message
 from api.views import BaseResource, Form, abort
-from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -27,16 +26,6 @@ message_preparer = FieldsPreparer(fields={
 class MessageResource(BaseResource):
     "Manage messages."
     preparer = message_preparer
-
-    def is_authenticated(self):
-        # Allow write access with token auth.
-        if super().is_authenticated():
-            return True
-
-        if self.request_method() == 'POST' and token_auth():
-            return True
-
-        return False
 
     def list(self):
         "List all messages."

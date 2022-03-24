@@ -6,10 +6,8 @@ from datetime import datetime
 
 import pycron
 from stopit import threading_timeoutable, TimeoutException
-from conduit_client import ssh
 
-from api.models import Task, Setting
-from api.config import SSH_KEY_FILE
+from api.models import Task
 
 
 LOGGER = logging.getLogger(__name__)
@@ -102,8 +100,6 @@ class RepeatTimer(threading.Timer):
 
 
 def start_background_tasks(tasks_interval=60.0, ssh_interval=15.0):
-    console_uuid = Setting.get_setting('CONSOLE_UUID')
-
     def _scheduler():
         LOGGER.debug('Scheduler checking %i tasks', len(CRONTAB))
         for schedule, f, args, kwargs in CRONTAB:
@@ -112,14 +108,8 @@ def start_background_tasks(tasks_interval=60.0, ssh_interval=15.0):
                     'Schedule %s is now, executing task %s', schedule, f)
                 defer(f, args, kwargs)
 
-    def _ssh_manager():
-        manager = ssh.create_manager(user=console_uuid, key=SSH_KEY_FILE)
-        # TODO: add tunnels
-
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
     RepeatTimer(tasks_interval, _scheduler, daemon=True).start()
-    LOGGER.info('Starting ssh manager')
-    RepeatTimer(ssh_interval, _ssh_manager, daemon=True).start()
 
 
 def defer(f, args=(), kwargs={}, timeout=None,

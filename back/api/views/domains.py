@@ -11,7 +11,6 @@ from wtfpeewee.orm import model_form
 from api.app import oauth
 from api.views import BaseResource, Form, abort
 from api.models import Domain, DNS_PROVIDERS
-from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,16 +33,6 @@ class DomainResource(BaseResource):
         'shared': ['GET'],
         'check': ['POST'],
     }
-
-    def is_authenticated(self):
-        # Allow read access with token auth.
-        if super().is_authenticated():
-            return True
-
-        if self.request_method() == 'GET' and token_auth():
-            return True
-
-        return False
 
     def list(self):
         "List all domains."

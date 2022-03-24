@@ -38,8 +38,7 @@ export default {
 
   methods: {
     ...mapActions({
-      whoami: 'auth/whoami',
-      fetchUserCount: 'auth/fetchUserCount'
+      whoami: 'auth/whoami'
     }),
 
     onLogout() {
@@ -54,7 +53,6 @@ export default {
 
   mounted () {
     this.whoami()
-    this.fetchUserCount()
   }
 }
 </script>

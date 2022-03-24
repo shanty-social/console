@@ -24,6 +24,10 @@
             <v-list-item-title>Image</v-list-item-title>
             <v-list-item-subtitle>{{ item.image }}</v-list-item-subtitle>
           </v-list-item-content>
+          <v-list-item-content>
+            <v-list-item-title>Aliases</v-list-item-title>
+            <v-list-item-subtitle>{{ item.aliases.join(', ') }}</v-list-item-subtitle>
+          </v-list-item-content>
           <v-list-item-action>
             <v-btn
               icon

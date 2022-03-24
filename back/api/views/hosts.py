@@ -29,16 +29,17 @@ def _container_details(container):
     "Get details of container."
     NetworkSettings = container.attrs['NetworkSettings']
     Config = container.attrs['Config']
-    aliases, addresses, ports = [], [], []
+    aliases, addresses, ports = set(), set(), set()
     for network in NetworkSettings['Networks'].values():
         if network.get('Aliases'):
-            aliases.extend(network['Aliases'])
+            aliases.update(network['Aliases'])
         if network.get('IPAddress'):
-            addresses.append(network['IPAddress'])
+            addresses.update(network['IPAddress'])
     for port in Config.get('ExposedPorts', {}).keys():
         port, type = port.split('/')
         if type == 'tcp':
-            ports.append(int(port))
+            ports.add(int(port))
+    aliases.remove(Config['Hostname'])
     return {
         'id': container.attrs['Id'],
         'created': container.attrs['Created'],
@@ -46,9 +47,9 @@ def _container_details(container):
         'service': Config['Labels'].get('com.docker.compose.service'),
         'image': Config['Image'],
         'mode': Config.get('HostConfig', {}).get('NetworkMode'),
-        'aliases': aliases,
-        'addresses': addresses,
-        'ports': ports,
+        'aliases': list(aliases),
+        'addresses': list(addresses),
+        'ports': list(ports),
     }
 
 

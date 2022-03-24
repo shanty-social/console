@@ -11,7 +11,6 @@ from api.views import (
     BaseResource, MultiSerializer, JSONSerializer, TextSerializer, Form,
     abort,
 )
-from api.auth import token_auth
 
 
 LOGGER = logging.getLogger(__name__)
@@ -56,16 +55,6 @@ class SettingResource(BaseResource):
     })
     serializer = MultiSerializer(
         json=JSONSerializer(), text=SettingSerializer())
-
-    def is_authenticated(self):
-        # Allow read access with token auth.
-        if super().is_authenticated():
-            return True
-
-        if self.request_method() == 'GET' and token_auth():
-            return True
-
-        return False
 
     def list(self):
         "List all settings."

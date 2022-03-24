@@ -239,12 +239,13 @@ class TaskLog(db.Model):
 class Domain(db.Model):
     "Domain model representing dns domain."
     name = CharField(null=False, unique=True)
-    type = CharField(null=False, choices=DNS_TYPES.items())
+    type = CharField(
+        null=False, default='static', choices=DNS_TYPES.items())
     provider = CharField(
-        null=False, choices=[
+        null=True, choices=[
             (name, name) for name in DNS_PROVIDERS.keys()
         ])
-    options = JSONField()
+    options = JSONField(null=True)
     created = DateTimeField(default=datetime.now)
 
     @staticmethod
@@ -265,12 +266,10 @@ class Endpoint(db.Model):
 
     name = CharField(null=False, unique=True)
     host = CharField(null=False)
-    http_port_external = IntegerField(null=True)
-    http_port_internal = IntegerField(null=True)
-    https_port_external = IntegerField(null=True)
-    https_port_internal = IntegerField(null=True)
+    port = IntegerField(null=True)
     path = CharField(null=False, default='/')
-    type = CharField(null=False, choices=ENDPOINT_TYPES.items())
+    type = CharField(
+        null=False, default='tunnel', choices=ENDPOINT_TYPES.items())
     domain = ForeignKeyField(Domain, null=False, backref='entrypoints')
     created = DateTimeField(default=datetime.now)
 
