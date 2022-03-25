@@ -9,7 +9,7 @@
               <EndpointHost
                 v-model="form.host"
               />
-              <EndpointTraffic
+              <SharedDomain
                 v-model="form.traffic"
               />
               <v-btn>Save</v-btn>
@@ -23,14 +23,14 @@
 
 <script>
 import EndpointHost from '@/components/endpoint/Host'
-import EndpointTraffic from '@/components/endpoint/Traffic'
+import SharedDomain from '@/components/endpoint/SharedDomain.vue'
 
 export default {
   name: 'Endpoint',
 
   components: {
     EndpointHost,
-    EndpointTraffic,
+    SharedDomain,
   },
 
   data () {

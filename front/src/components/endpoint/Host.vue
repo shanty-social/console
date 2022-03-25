@@ -6,7 +6,7 @@
     <p class="text-h4">Host / server</p>
     <p>First we need a service and port to expose. Choose a host and an open port.</p>
     <v-row>
-      <v-col>
+      <v-col md="8">
         <v-select
           v-model="form.host"
           :items="hosts"
@@ -27,12 +27,13 @@
           </template>
         </v-select>
       </v-col>
-      <v-col>
+      <v-col md="4">
         <v-combobox
           v-model="form.port"
           :rules="rules.port"
           :items="ports"
           :disabled="ports === null"
+          :hide-spin-buttons="true"
           @change="update"
           label="Select port"
           type="number"

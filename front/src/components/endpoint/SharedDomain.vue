@@ -1,16 +1,20 @@
 <template>
-  <v-text-field
-    v-model="form.hostname"
-    :prefix="suffix"
-    :rules="rules.hostname"
-    :error-messages="errors"
-    prepend-inner-icon="mdi-menu-right"
-    append-icon="mdi-menu-left"
-    @click:prepend-inner="decrement"
-    @click:append="increment"
-    @change="update"
-    reverse
-  ></v-text-field>
+  <v-form>
+    <p class="text-h4">Domain</p>
+    <p>Next we need to choose a domain name. This is what users will type into their browser to visit your site.</p>
+    <v-text-field
+      v-model="form.hostname"
+      :prefix="suffix"
+      :rules="rules.hostname"
+      :error-messages="errors"
+      prepend-inner-icon="mdi-menu-right"
+      append-icon="mdi-menu-left"
+      @click:prepend-inner="decrement"
+      @click:append="increment"
+      @change="update"
+      reverse
+    ></v-text-field>
+  </v-form>
 </template>
 
 <script>
