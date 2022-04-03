@@ -1,8 +1,9 @@
 import ssl
-import socket
 import logging
 
 import docker
+
+from gevent import socket
 
 from flask import request
 
@@ -34,7 +35,7 @@ def _container_details(container):
         if network.get('Aliases'):
             aliases.update(network['Aliases'])
         if network.get('IPAddress'):
-            addresses.update(network['IPAddress'])
+            addresses.add(network['IPAddress'])
     for port in Config.get('ExposedPorts', {}).keys():
         port, type = port.split('/')
         if type == 'tcp':
@@ -124,8 +125,7 @@ class HostResource(BaseResource):
             pass
         d = docker.DockerClient(base_url=f'unix://{DOCKER_SOCKET_PATH}')
         containers = d.containers.list(**kwargs)
-        # from pprint import pprint
-        # pprint(containers[0].attrs)
+        # from pprint import pprint; pprint(containers[0].attrs)
         return [
             _container_details(c) for c in containers
         ]
@@ -164,6 +164,8 @@ class HostResource(BaseResource):
 
             try:
                 s.connect((host, port))
+                if port == s.getsockname()[1]:
+                    continue
                 LOGGER.debug('Connected to %s:%i', host, port)
                 results_ports[port] = _sniff(s, host, port)
 

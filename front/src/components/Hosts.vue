@@ -31,8 +31,8 @@
           <v-list-item-action>
             <v-btn
               icon
-              @click="remove(item.uid)"
-            ><v-icon>mdi-earth-plus</v-icon></v-btn>
+              :to="`/endpoint?host=${item.id}`"
+            ><v-icon>mdi-web-plus</v-icon></v-btn>
           </v-list-item-action>
         </v-list-item>
       </v-list>

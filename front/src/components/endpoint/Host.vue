@@ -8,13 +8,13 @@
     <v-row>
       <v-col md="8">
         <v-select
-          v-model="form.host"
+          v-model="form.host.id"
           :items="hosts"
+          item-value="id"
           :item-text="item => `${item.hostname} - ${item.image}`"
-          return-object
           :rules="rules.host"
           placeholder="choose host"
-          @change="scan"
+          @change="() => { scan(); update(); }"
           label="Select host"
           :loading="busy"
         >
@@ -65,16 +65,15 @@ export default {
   data () {
     return {
       form: {
-        host: (this.value) ? this.value.host : null,
+        host: (this.value) ? this.value.host : {},
         port: (this.value) ? this.value.port : null,
-        other: null
       },
       rules: {
         host: [
           v => (v !== undefined) || 'Is required'
         ],
         port: [
-          v => (v > 0 || v === 'other') || 'Choose a port'
+          v => (v > 0) || 'Choose a port'
         ],
       },
       error: null,
@@ -84,11 +83,21 @@ export default {
   },
 
   mounted () {
-    this.fetchHosts()
+    this
+      .fetchHosts()
+      .then(() => {
+        if (this.form.host && !this.form.port) {
+          this.scan()
+        }
+      })
   },
 
   computed: {
     ...mapGetters({ hosts: 'hosts/data' }),
+
+    host () {
+      return this.hosts.find((o) => o.id === this.form.host.id)
+    },
   },
 
   methods: {
@@ -96,23 +105,29 @@ export default {
 
     update () {
       this.$emit('input', {
-        host: this.form.host,
+        host: {
+          id: this.form.host.id,
+          name: this.host.aliases[0],
+        },
         port: this.form.port,
       })
     },
 
     scan() {
+      if (!this.host) {
+        return
+      }
       this.busy = true
       this.ports = null
       const data = {
-        host: this.form.host.addresses[0]
+        host: this.host.addresses[0]
       }
       axios
         .post('/api/hosts/port_scan/', data, { params: {'only_open': 'true' }})
         .then((r) => {
           this.busy = false;
           this.ports = []
-          this.form.host.ports.forEach((port) => {
+          this.host.ports.forEach((port) => {
             this.ports.push(port)
           })
           Object.keys(r.data.ports).forEach(port => {

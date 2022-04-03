@@ -1,11 +1,14 @@
 from urllib.parse import urlparse, urlunparse
+from itertools import chain
 
 from flask import (
-    make_response, jsonify, request, abort as _abort, url_for as _url_for
+    make_response, jsonify, request, redirect, abort as _abort,
+    url_for as _url_for,
 )
 from restless.fl import FlaskResource
 from restless.serializers import Serializer, JSONSerializer
 from werkzeug.exceptions import HTTPException
+from werkzeug.routing import RoutingException
 
 from wtforms import Form as _Form
 
@@ -29,6 +32,21 @@ def abort(code, obj=None):
         _abort(make_response(jsonify(obj), code))
     else:
         _abort(code)
+
+
+class RedirectResponse(HTTPException, RoutingException):
+    """Raise if the map requests a redirect. This is for example the case if
+    `strict_slashes` are activated and an url that requires a trailing slash.
+    The attribute `new_url` contains the absolute destination url.
+    The attribute `code` is returned status code.
+    """
+    def __init__(self, new_url, code=301):
+        RoutingException.__init__(self, new_url)
+        self.new_url = new_url
+        self.code = code
+
+    def get_response(self, environ):
+        return redirect(self.new_url, self.code)
 
 
 class MultiDict(dict):
@@ -139,10 +157,12 @@ class BaseResource(FlaskResource):
         session_auth,
     ]
     extra_actions = {}
+    extra_details = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, methods in self.extra_actions.items():
+        for name, methods in chain(self.extra_actions.items(),
+                                   self.extra_details.items()):
             self.http_methods[name] = {
                 method: name for method in methods
             }
@@ -154,6 +174,12 @@ class BaseResource(FlaskResource):
         for name, methods in cls.extra_actions.items():
             app.add_url_rule(
                 rule_prefix + f'{name}/',
+                endpoint=cls.build_endpoint_name(name, endpoint_prefix),
+                view_func=cls.as_view(name),
+                methods=methods)
+        for name, methods in cls.extra_details.items():
+            app.add_url_rule(
+                rule_prefix + f'<pk>/{name}/',
                 endpoint=cls.build_endpoint_name(name, endpoint_prefix),
                 view_func=cls.as_view(name),
                 methods=methods)

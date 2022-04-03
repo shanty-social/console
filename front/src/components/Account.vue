@@ -2,7 +2,7 @@
   <div>
     <v-btn
       v-if="!isAuthenticated"
-      href="/api/oauth/shanty/"
+      to="/authentication"
     >
       Login
       <v-icon>mdi-login-variant</v-icon>

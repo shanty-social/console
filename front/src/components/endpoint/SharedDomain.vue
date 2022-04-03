@@ -61,7 +61,7 @@ export default {
 
   mounted () {
     axios
-      .get('/api/domains/shared/')
+      .get('/api/oauth/shanty/domains/')
       .then((r) => {
         this.shared = r.data
       })
@@ -89,7 +89,7 @@ export default {
 
     check: debounce(function(val) {
       axios
-        .post(`/api/domains/check/`, { name: `${val}${this.suffix}` })
+        .post(`/api/oauth/shanty/check_domain/`, { name: `${val}${this.suffix}` })
         .then(() => {
           this.errors = ['Is not available']
         })

@@ -73,7 +73,7 @@ export default {
 
     items () {
       return [
-        { icon: 'mdi-earth', name: 'Endpoints', count: this.endpoints, component: Endpoints },
+        { icon: 'mdi-web', name: 'Endpoints', count: this.endpoints, component: Endpoints },
         { icon: 'mdi-package-variant', name: 'Hosts', count: this.hosts, component: Hosts },
       ]
     }

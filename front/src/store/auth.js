@@ -5,20 +5,20 @@ export default {
 
   state: {
     whoami: null,
-    userCount: null
+    activated: null
   },
 
   getters: {
     isAuthenticated (state) {
-      return state.whoami !== null && state.whoami !== false
+      return state.whoami !== null
     },
 
     whoami (state) {
       return state.whoami
     },
 
-    userCount (state) {
-      return state.userCount
+    isActivated (state) {
+      return state.activated
     }
   },
 
@@ -30,23 +30,16 @@ export default {
       }
     },
 
-    setUserCount (state, count) {
-      state.userCount = count
+    setActivated (state, activated) {
+      state.activated = activated
     }
   },
 
   actions: {
     whoami ({ state, commit }) {
       return new Promise((resolve) => {
-        if (state.whoami === false) {
-          resolve(null)
-          return
-        } else if (state.whoami) {
-          resolve(state.whoami)
-          return
-        }
         axios
-          .get('/api/whoami/')
+          .get('/api/users/whoami/')
           .then((r) => {
             commit('setWhoami', r.data)
             resolve(state.whoami)
@@ -58,11 +51,29 @@ export default {
       })
     },
 
+    login({ commit }, data) {
+      axios
+        .post('/api/users/login/', data)
+        .then((r) => {
+          commit('setWhoami', r.data)
+        })
+        .catch(console.error)
+    },
+
     logout({ commit }) {
       axios
-        .get('/api/oauth/shanty/end/')
+        .post('/api/users/logout/')
         .then(() => {
           commit('setWhoami', null)
+        })
+        .catch(console.error)
+    },
+
+    checkActivated({ commit }) {
+      axios
+        .get('/api/users/activated/')
+        .then((r) => {
+          commit('setActivated', r.data)
         })
         .catch(console.error)
     }

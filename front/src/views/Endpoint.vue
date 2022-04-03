@@ -12,7 +12,9 @@
               <SharedDomain
                 v-model="form.traffic"
               />
-              <v-btn>Save</v-btn>
+              <v-btn
+                @click="save"
+              >Save</v-btn>
             </v-card-text>
           </v-card>
         </v-flex>
@@ -22,6 +24,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 import EndpointHost from '@/components/endpoint/Host'
 import SharedDomain from '@/components/endpoint/SharedDomain.vue'
 
@@ -41,12 +44,36 @@ export default {
 
     return {
       form: {
-        host: null,
+        host: {
+          host: {
+            id: host,
+            name: null,
+          },
+          port: null,
+        },
         traffic: null,
       },
       host,
     }
   },
+
+  methods: {
+    save () {
+      const data = {
+        name: this.form.traffic,
+        domain_name: this.form.traffic,
+        host: this.form.host.host.name,
+        port: this.form.host.port,
+      }
+      console.log(data)
+      axios
+        .post('/api/endpoints/', data)
+        .then((r) => {
+          console.log(r)
+        })
+        .catch(console.error)
+    }
+  }
 }
 </script>
 
