@@ -25,12 +25,18 @@ export default {
 
   actions: {
     fetch({ commit }) {
-      axios
+      return new Promise((resolve, reject) => {
+        axios
         .get('/api/endpoints/')
         .then((r) => {
           commit('set', r.data.objects)
+          resolve()
         })
-        .catch(console.error)
+        .catch((e) => {
+          console.error(e)
+          reject(e)
+        })
+      })
     }
   }
 }

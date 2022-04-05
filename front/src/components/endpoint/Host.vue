@@ -32,10 +32,9 @@
           v-model="form.port"
           :rules="rules.port"
           :items="ports"
-          :disabled="ports === null"
           :hide-spin-buttons="true"
           @change="update"
-          label="Select port"
+          label="Select or enter port"
           type="number"
         ></v-combobox>
       </v-col>
@@ -84,11 +83,9 @@ export default {
 
   mounted () {
     this
-      .fetchHosts()
+      .fetch()
       .then(() => {
-        if (this.form.host && !this.form.port) {
-          this.scan()
-        }
+        this.populateValue()
       })
   },
 
@@ -100,8 +97,38 @@ export default {
     },
   },
 
+  watchers: {
+    value () {
+      this.populateValue()
+    }
+  },
+
   methods: {
-    ...mapActions({ fetchHosts: 'hosts/fetch' }),
+    ...mapActions({ fetch: 'hosts/fetch' }),
+
+    populateValue () {
+      if (!this.value) {
+        return
+      }
+
+      if (this.value.port) {
+        this.form.port = this.value.port
+      } else {
+        this.scan()
+      }
+
+      if (this.value.host && this.value.host.id && !this.value.host.name) {
+        const host = this.hosts.find((o) => o.id === this.value.host.id)
+        if (host) {
+          this.value.host.name = host.name
+        }
+      } else if (this.value.host && this.value.host.name && !this.value.host.id) {
+        const host = this.hosts.find((o) => o.aliases.includes(this.value.host.name))
+        if (host) {
+          this.value.host.id = host.id
+        }
+      }
+    },
 
     update () {
       this.$emit('input', {

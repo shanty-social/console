@@ -99,7 +99,7 @@ class RepeatTimer(threading.Timer):
                 break
 
 
-def start_background_tasks(tasks_interval=60.0, ssh_interval=15.0):
+def start_background_tasks(interval=60.0):
     def _scheduler():
         LOGGER.debug('Scheduler checking %i tasks', len(CRONTAB))
         for schedule, f, args, kwargs in CRONTAB:
@@ -109,7 +109,7 @@ def start_background_tasks(tasks_interval=60.0, ssh_interval=15.0):
                 defer(f, args, kwargs)
 
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
-    RepeatTimer(tasks_interval, _scheduler, daemon=True).start()
+    RepeatTimer(interval, _scheduler, daemon=True).start()
 
 
 def defer(f, args=(), kwargs={}, timeout=None,

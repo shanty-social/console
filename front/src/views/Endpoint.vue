@@ -12,6 +12,11 @@
               <SharedDomain
                 v-model="form.traffic"
               />
+              <v-alert
+                v-if="error"
+                dense outlined
+                type="error"
+              >{{ error }}</v-alert>
               <v-btn
                 @click="save"
               >Save</v-btn>
@@ -25,6 +30,7 @@
 
 <script>
 import axios from 'axios'
+import { mapActions, mapGetters } from 'vuex'
 import EndpointHost from '@/components/endpoint/Host'
 import SharedDomain from '@/components/endpoint/SharedDomain.vue'
 
@@ -53,11 +59,39 @@ export default {
         },
         traffic: null,
       },
-      host,
+      editing: null,
+      error: null,
     }
   },
 
+  mounted () {
+    this
+      .fetch()
+      .then(() => {
+        let id = this.$route.query.id
+        if (!id) {
+          return
+        }
+        id = parseInt(id, 10)
+        this.editing = this.items.find((o) => o.id === id)
+        if (!this.editing) {
+          return
+        }
+        const {host, port, domain_name} = this.editing
+        this.form.host.host.id = null
+        this.form.host.host.name = host
+        this.form.host.port = port
+        this.form.traffic = domain_name
+      })
+  },
+
+  computed: {
+    ...mapGetters({ items: 'endpoints/data' })
+  },
+
   methods: {
+    ...mapActions({ fetch: 'endpoints/fetch' }),
+
     save () {
       const data = {
         name: this.form.traffic,
@@ -65,13 +99,15 @@ export default {
         host: this.form.host.host.name,
         port: this.form.host.port,
       }
-      console.log(data)
       axios
         .post('/api/endpoints/', data)
         .then((r) => {
+          this.error = null
           console.log(r)
         })
-        .catch(console.error)
+        .catch((e) => {
+          this.error = e.response.data.error
+        })
     }
   }
 }

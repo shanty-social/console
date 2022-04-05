@@ -3,7 +3,7 @@ from pprint import pformat
 
 from authlib.integrations.flask_client import OAuth
 
-from conduit_client.ssh import SSHManager
+from conduit_client import SSHManagerClient
 
 from flask import Flask, json
 from flask_socketio import SocketIO, disconnect
@@ -78,9 +78,10 @@ for provider in config.OAUTH_PROVIDERS:
     oauth.register(
         name=provider['name'], client_kwargs={'scope': 'openid email profile'})
 Session(app)
-ssh = SSHManager(
+ssh = SSHManagerClient(
     host=config.SSH_HOST,
     port=config.SSH_PORT,
     user=config.CONSOLE_UUID,
     key=config.SSH_KEY_FILE,
+    host_keys=config.SSH_HOST_KEYS_FILE,
 )

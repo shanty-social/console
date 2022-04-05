@@ -40,7 +40,7 @@ class RedirectResponse(HTTPException, RoutingException):
     The attribute `new_url` contains the absolute destination url.
     The attribute `code` is returned status code.
     """
-    def __init__(self, new_url, code=301):
+    def __init__(self, new_url, code=302):
         RoutingException.__init__(self, new_url)
         self.new_url = new_url
         self.code = code

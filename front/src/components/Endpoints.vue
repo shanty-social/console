@@ -28,14 +28,24 @@
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-content>
+            <v-list-item-title>Host</v-list-item-title>
+            <v-list-item-subtitle>{{ item.host }}</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-content>
             <v-list-item-title>Domain</v-list-item-title>
             <v-list-item-subtitle>{{ item.domain_name }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
             <v-btn
               icon
-              @click="remove(item.uid)"
+              :to="`/endpoint?id=${item.id}`"
             ><v-icon>mdi-pencil-outline</v-icon></v-btn>
+          </v-list-item-action>
+          <v-list-item-action>
+            <v-btn
+              icon
+              @click="remove(item.id)"
+            ><v-icon>mdi-web-remove</v-icon></v-btn>
           </v-list-item-action>
         </v-list-item>
       </v-list>
@@ -60,7 +70,11 @@ export default {
   methods: {
     ...mapActions({
       fetch: 'endpoints/fetch'
-    })
+    }),
+
+    remove(id) {
+      console.log(`Removing: ${id}`)
+    }
   }
 }
 </script>

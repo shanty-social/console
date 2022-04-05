@@ -29,7 +29,11 @@ export default {
   },
 
   data () {
-    const hostname = this.value || null
+    let hostname = null
+    if (this.value) {
+      hostname = this.value.split('.')[0]
+    }
+
     return {
       form: {
         hostname,
@@ -41,15 +45,16 @@ export default {
           v => (v || '').match(/^[A-Za-z0-9-/]*$/) !== null || 'Invalid characters',
         ]
       },
+      editing: this.value,
       shared: null,
-      current: 0,
+      index: 0,
       errors: [],
     }
   },
 
   computed: {
     suffix () {
-      return (this.shared) ? `.${this.shared[this.current]}` : null
+      return (this.shared) ? `.${this.shared[this.index]}` : null
     }
   },
 
@@ -57,6 +62,11 @@ export default {
     'form.hostname' (val) {
       this.check(val)
     },
+
+    value (val) {
+      this.form.hostname = val.split('.')[0]
+      this.editing = val
+    }
   },
 
   mounted () {
@@ -64,23 +74,29 @@ export default {
       .get('/api/oauth/shanty/domains/')
       .then((r) => {
         this.shared = r.data
+        if (this.value) {
+          const domain = this.value.split('.').slice(1).join('.')
+          this.index = this.shared.indexOf(domain)
+        }
       })
       .catch(console.error)
   },
 
   methods: {
     decrement () {
-      this.current -= 1
-      if (this.current < 0) {
-        this.current = this.shared.length - 1;
+      this.index -= 1
+      if (this.index < 0) {
+        this.index = this.shared.length - 1;
       }
+      this.update()
     },
 
     increment () {
-      this.current += 1
-      if (this.current === this.shared.length) {
-        this.current = 0
+      this.index += 1
+      if (this.index === this.shared.length) {
+        this.index = 0
       }
+      this.update()
     },
 
     update () {
@@ -88,13 +104,18 @@ export default {
     },
 
     check: debounce(function(val) {
+      const domain = `${val}${this.suffix}`
+      if (domain === this.editing) {
+        this.errors = []
+        return
+      }
       axios
-        .post(`/api/oauth/shanty/check_domain/`, { name: `${val}${this.suffix}` })
+        .post(`/api/oauth/shanty/check_domain/`, { name: domain })
         .then(() => {
           this.errors = ['Is not available']
         })
         .catch((e) => {
-          if (e.response.statusCode === 404) {
+          if (e.response.status === 404) {
             this.errors = []
           }
         })

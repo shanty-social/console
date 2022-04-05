@@ -125,7 +125,7 @@ class HostResource(BaseResource):
             pass
         d = docker.DockerClient(base_url=f'unix://{DOCKER_SOCKET_PATH}')
         containers = d.containers.list(**kwargs)
-        # from pprint import pprint; pprint(containers[0].attrs)
+        from pprint import pprint; pprint(containers[0].attrs)
         return [
             _container_details(c) for c in containers
         ]
