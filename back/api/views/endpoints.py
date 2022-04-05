@@ -45,9 +45,16 @@ def check_endpoint_ssh():
     add, rem, tunnels = [], [], ssh.list_tunnels()
     for endpoint in endpoints:
         tunnel = Tunnel(endpoint.domain_name, endpoint.host, endpoint.port)
-        if tunnel in tunnels:
+        found = any([
+            tunnel == t for t in tunnels
+        ])
+        if not found:
             add.append(tunnel)
-        else:
+    for tunnel in tunnels:
+        found = any([
+            tunnel == t for t in add
+        ])
+        if not found:
             rem.append(tunnel)
 
     # Add and remove tunnels
