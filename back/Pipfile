@@ -19,7 +19,7 @@ authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0
 wtf-peewee = "*"
 uwsgi-chunked = "==0.1.8"
 gevent = "*"
-conduit-client = {subdirectory = "client", ref = "97a61bfcde56a5202988bcaef5fad2421eaefe3f", git = "https://github.com/shanty-social/conduit.git"}
+conduit-client = {subdirectory = "client", ref = "9174f4aed8bad48a286334e2993d3c76b6476d60", git = "https://github.com/shanty-social/conduit.git"}
 
 [dev-packages]
 flake8 = "*"

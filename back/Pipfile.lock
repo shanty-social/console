@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "21949b32fa290481beeed2df75e05985aae68a57d15c941318b2f61c66701fc9"
+            "sha256": "24749ed2cbb5f878e1b2613501055de825c369111e31dd1994cce7234161dd6a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -132,7 +132,7 @@
         },
         "conduit-client": {
             "git": "https://github.com/shanty-social/conduit.git",
-            "ref": "97a61bfcde56a5202988bcaef5fad2421eaefe3f",
+            "ref": "9174f4aed8bad48a286334e2993d3c76b6476d60",
             "subdirectory": "client"
         },
         "cryptography": {
