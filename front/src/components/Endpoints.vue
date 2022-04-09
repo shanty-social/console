@@ -69,12 +69,9 @@ export default {
 
   methods: {
     ...mapActions({
-      fetch: 'endpoints/fetch'
+      fetch: 'endpoints/fetch',
+      remove: 'endpoints/remove',
     }),
-
-    remove(id) {
-      console.log(`Removing: ${id}`)
-    }
   }
 }
 </script>

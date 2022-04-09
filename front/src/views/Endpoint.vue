@@ -17,10 +17,17 @@
                 dense outlined
                 type="error"
               >{{ error }}</v-alert>
-              <v-btn
-                @click="save"
-              >Save</v-btn>
             </v-card-text>
+            <v-card-actions>
+              <v-btn
+                @click="onSave"
+              >Save</v-btn>
+              <v-btn to="/">Cancel</v-btn>
+              <v-btn
+                color="error"
+                @click="onDelete"
+              >Delete</v-btn>
+            </v-card-actions>
           </v-card>
         </v-flex>
       </v-layout>
@@ -29,7 +36,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 import { mapActions, mapGetters } from 'vuex'
 import EndpointHost from '@/components/endpoint/Host'
 import SharedDomain from '@/components/endpoint/SharedDomain.vue'
@@ -52,8 +58,8 @@ export default {
       form: {
         host: {
           host: {
-            id: host,
-            name: null,
+            name: name,
+            addr: null,
           },
           port: null,
         },
@@ -77,9 +83,9 @@ export default {
         if (!this.editing) {
           return
         }
-        const {host, port, domain_name} = this.editing
-        this.form.host.host.id = null
-        this.form.host.host.name = host
+        const {host_name, address, port, domain_name} = this.editing
+        this.form.host.host.name = host_name
+        this.form.host.host.addr = address
         this.form.host.port = port
         this.form.traffic = domain_name
       })
@@ -90,24 +96,37 @@ export default {
   },
 
   methods: {
-    ...mapActions({ fetch: 'endpoints/fetch' }),
+    ...mapActions({
+      fetch: 'endpoints/fetch',
+      remove: 'endpoints/remove',
+      save: 'endpoints/save',
+    }),
 
-    save () {
+    onSave () {
       const data = {
+        id: this.editing && this.editing.id,
         name: this.form.traffic,
         domain_name: this.form.traffic,
-        host: this.form.host.host.name,
+        host_name: this.form.host.host.name,
+        addr: this.form.host.host.addr,
         port: this.form.host.port,
       }
-      axios
-        .post('/api/endpoints/', data)
-        .then((r) => {
-          this.error = null
-          console.log(r)
+      this.save(data)
+        .then(() => {
+          this.$router.push('/')
         })
         .catch((e) => {
-          this.error = e.response.data.error
+          this.error = e.response && e.response.data.error
         })
+    },
+
+    onDelete () {
+      this
+        .remove(this.editing.id)
+        .then(() => {
+          this.$router.push('/')
+        })
+        .catch(console.error)
     }
   }
 }

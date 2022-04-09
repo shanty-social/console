@@ -23,48 +23,6 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.NullHandler())
 
 DEFAULT_SETTING_GROUP = 'default'
-ENDPOINT_TYPES = {
-    'direct': 'direct',
-    'tunnel': 'tunnel',
-}
-DNS_TYPES = {
-    'static': 'static',
-    'dynamic': 'dynamic',
-}
-DNS_PROVIDERS = {
-    'afraid': {
-        'url': 'http://freedns.afraid.org',
-        'options': ['User', 'Password'],
-        'description': 'Free DNS Hosting, Dynamic DNS Hosting, Static DNS '
-                       'Hosting, subdomain and domain hosting.',
-        'nameservers': 'ns1.afraid.org,ns2.afraid.org,ns3.afraid.org,'
-                       'ns4.afraid.org',
-    },
-    'cloudflare': {
-        'url': 'https://www.cloudflare.com',
-        'options': ['API_Token', 'Email', 'Zone'],
-        'description': 'Cloudflare DNS is an enterprise-grade authoritative '
-                       'DNS service that offers the fastest response time, '
-                       'unparalleled redundancy, and advanced security with '
-                       'built-in DDoS mitigation and DNSSEC.',
-    },
-    'hurricane': {
-        'url': 'https://dns.he.net',
-        'options': ['Password'],
-        'description': 'Hurricane Electric Free DNS Hosting portal. This tool '
-                       'will allow you to easily manage and maintain your '
-                       'forward and reverse DNS.',
-    },
-    'strato': {
-        'url': 'https://www.strato.com',
-        'options': ['User', 'Password'],
-        'description': 'STRATO is the reliable web hosting provider for anyone'
-                       ' seeking online success. We make web hosting fair and '
-                       'simple – at an unbeatable price and without '
-                       'unnecessary frills.',
-        'nameservers': 'ns1.strato.de,ns2.strato.de,ns4.strato.de',
-    },
-}
 
 
 def _get_models():
@@ -263,7 +221,8 @@ class Endpoint(db.Model):
         ]
 
     name = CharField(null=False, unique=True)
-    host = CharField(null=False)
+    addr = CharField(null=False)
+    host_name = CharField(null=False)
     port = IntegerField(null=True)
     path = CharField(null=False, default='/')
     domain_name = CharField(null=False)
@@ -275,6 +234,10 @@ class Message(SignalMixin, db.Model):
     body = TextField(null=False)
     read = BooleanField(default=False)
     created = DateTimeField(default=datetime.now)
+
+    @staticmethod
+    def send(subject=None, body=None):
+        return Message.create(subject=subject, body=body)
 
 
 @post_save(sender=Task)

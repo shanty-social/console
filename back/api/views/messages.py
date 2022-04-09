@@ -17,6 +17,7 @@ LOGGER.addHandler(logging.NullHandler())
 MessageForm = model_form(Message, base_class=Form)
 
 message_preparer = FieldsPreparer(fields={
+    'id': 'id',
     'subject': 'subject',
     'body': 'body',
     'read': 'read',
@@ -54,3 +55,6 @@ class MessageResource(BaseResource):
         "Delete message."
         message = get_object_or_404(Message, Message.id == pk)
         message.delete_instance()
+
+    def delete_list(self):
+        Message.delete().execute()

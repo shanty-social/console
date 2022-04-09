@@ -1,7 +1,7 @@
 <template>
   <v-form>
     <p class="text-h4">Domain</p>
-    <p>Next we need to choose a domain name. This is what users will type into their browser to visit your site.</p>
+    <p>Next choose a domain name. Use the arrows to select a suffix, then type a prefix.</p>
     <v-text-field
       v-model="form.hostname"
       :prefix="suffix"
@@ -9,6 +9,7 @@
       :error-messages="errors"
       prepend-inner-icon="mdi-menu-right"
       append-icon="mdi-menu-left"
+      placeholder="enter a prefix"
       @click:prepend-inner="decrement"
       @click:append="increment"
       @change="update"

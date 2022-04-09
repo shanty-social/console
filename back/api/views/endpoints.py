@@ -28,44 +28,52 @@ EndpointForm = model_form(Endpoint, base_class=Form)
 
 @cron('* * * * *')
 def check_endpoint_ssh():
-    "Checks ssh tunnel status."
+    "SSH tunnel status check"
     endpoints = list(Endpoint.select())
+    LOGGER.debug('Checking %i tunnels', len(endpoints))
 
     try:
         ssh.ping()
 
     except Exception as e:
         LOGGER.exception('Error checking ssh health')
-        Message.create(
-            subject='SSH tunnel status',
-            body=f'SSH tunnel is down, error: {e.args[0]}')
+        Message.send(
+            'SSH tunnel status', f'SSH tunnel is down, error: {e.args[0]}')
         return
 
     # Find which tunnels to add or remove.
-    add, rem, tunnels = [], [], ssh.list_tunnels()
+    add, remove, keep, tunnels = [], [], [], ssh.list_tunnels()
+    LOGGER.debug('Received list of %i tunnels', len(tunnels))
     for endpoint in endpoints:
-        tunnel = Tunnel(endpoint.domain_name, endpoint.host, endpoint.port)
+        tunnel = Tunnel(endpoint.domain_name, endpoint.addr, endpoint.port)
         found = any([
             tunnel == t for t in tunnels
         ])
-        if not found:
+        if found:
+            keep.append(tunnel)
+        else:
             add.append(tunnel)
     for tunnel in tunnels:
         found = any([
-            tunnel == t for t in add
+            tunnel == t for t in keep
         ])
         if not found:
-            rem.append(tunnel)
+            remove.append(tunnel)
 
     # Add and remove tunnels
+    LOGGER.debug(
+        'Tunnels: keep=%i, add=%i, remove=%i',
+        len(keep), len(add), len(remove))
+    for tunnel in remove:
+        yield f'Removing endpoint {endpoint.name}'
+        ssh.del_tunnel(tunnel)
     for tunnel in add:
         yield f'Setting up endpoint {endpoint.name}'
         ssh.add_tunnel(tunnel)
-    for tunnel in rem:
-        yield f'Removing endpoint {endpoint.name}'
-        ssh.del_tunnel(tunnel)
 
-    return f'Set up {len(endpoints)} endpoints'
+    message = f'Set up {len(endpoints)} endpoints'
+    Message.send('SSH health good', message)
+    return message
 
 
 def setup_endpoint_remote(domain_name, service_name):
@@ -109,7 +117,8 @@ class EndpointResource(BaseResource):
     preparer = FieldsPreparer(fields={
         'id': 'id',
         'name': 'name',
-        'host': 'host',
+        'addr': 'addr',
+        'host_name': 'host_name',
         'port': 'port',
         'path': 'path',
         'domain_name': 'domain_name',
@@ -119,19 +128,22 @@ class EndpointResource(BaseResource):
         "List all endpoints."
         type = request.args.get('type')
         domain_name = request.args.get('domain_name')
-        host = request.args.get('host')
+        addr = request.args.get('addr')
+        host_name = request.args.get('host_name')
         endpoints = Endpoint.select()
         if type:
             endpoints = endpoints.where(Endpoint.type == type)
         if domain_name:
             endpoints = endpoints.where(Endpoint.type == domain_name)
-        if host:
-            endpoints = endpoints.where(Endpoint.host == host)
+        if addr:
+            endpoints = endpoints.where(Endpoint.addr == addr)
+        if host_name:
+            endpoints = endpoints.where(Endpoint.host_name == host_name)
         return endpoints
 
     def detail(self, pk):
         "Retrieve single endpoint."
-        return get_object_or_404(Endpoint, Endpoint.name == pk)
+        return get_object_or_404(Endpoint, Endpoint.id == pk)
 
     def create(self):
         "Create new endpoint(s)."
@@ -142,7 +154,7 @@ class EndpointResource(BaseResource):
             setup_endpoint_remote(form.domain_name.data, 'shanty')
         except Exception as e:
             LOGGER.exception('Error setting up remote endpoint')
-            details = {'error': e.args[0]}
+            details = {'error': e.args[1]}
             try:
                 details['details'] = e.details
             except AttributeError:
@@ -150,7 +162,8 @@ class EndpointResource(BaseResource):
             abort(400, details)
         endpoint, created = Endpoint.get_or_create(
             name=form.name.data, defaults={
-                'host': form.host.data,
+                'addr': form.addr.data,
+                'host_name': form.host_name.data,
                 'port': form.port.data,
                 'path': form.path.data,
                 'domain_name': form.domain_name.data,
@@ -165,17 +178,21 @@ class EndpointResource(BaseResource):
 
     def update(self, pk):
         "Update single endpoint."
-        endpoint = get_object_or_404(Endpoint, Endpoint.name == pk)
+        endpoint = get_object_or_404(Endpoint, Endpoint.id == pk)
         form = EndpointForm(self.data)
         if not form.validate():
             abort(400, form.errors)
         form.populate_obj(endpoint)
         endpoint.save()
+        # NOTE: this task ensures ssh tunnels are set up.
+        defer(check_endpoint_ssh)
         return endpoint
 
     def delete(self, pk):
         "Delete single endpoint."
-        endpoint = get_object_or_404(Endpoint, Endpoint.name == pk)
+        endpoint = get_object_or_404(Endpoint, Endpoint.id == pk)
+        # shanty = getattr(oauth, service_name)
+        # r = shanty.delete('/api/hosts/${endpoint.domain_name}')
         endpoint.delete_instance()
         # NOTE: this task ensures ssh tunnels are removed.
         defer(check_endpoint_ssh)

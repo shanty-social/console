@@ -1,3 +1,7 @@
+from urllib.parse import urljoin
+
+import requests
+
 from restless.preparers import FieldsPreparer
 from restless.resources import skip_prepare
 
@@ -11,17 +15,13 @@ from api.tasks import cron
 from api.views import (
     url_for, url_redir, Form, BaseResource, abort, RedirectResponse
 )
-from api.config import OAUTH_PROVIDERS
+from api import config
 from api.models import OAuthClient
 
 
 @cron('*/5 * * * *')
 def refresh_tokens():
     "Refresh oauth tokens."
-
-
-def providers():
-    return jsonify(OAUTH_PROVIDERS)
 
 
 OAuthClientForm = model_form(OAuthClient, base_class=Form)
@@ -92,7 +92,14 @@ class OAuthClientResource(BaseResource):
 
     @skip_prepare
     def providers(self):
-        return OAUTH_PROVIDERS
+        providers = []
+        for provider in config.OAUTH_PROVIDERS[:]:
+            name = provider['name']
+            base_url = getattr(config, f'{name.upper()}_BASE_URL')
+            r = requests.get(urljoin(base_url, '/api/hosts/shared/'))
+            provider['domains'] = r.json()
+            providers.append(provider)
+        return {'objects': providers}
 
     @skip_prepare
     def domains(self, pk):

@@ -4,18 +4,18 @@
     ref="form"
   >
     <p class="text-h4">Host / server</p>
-    <p>First we need a service and port to expose. Choose a host and an open port.</p>
+    <p>First choose a container and port to expose. Choose a container, and then a port once the list is populated.</p>
     <v-row>
       <v-col md="8">
         <v-select
-          v-model="form.host.id"
+          v-model="form.host.name"
           :items="hosts"
-          item-value="id"
+          item-value="name"
           :item-text="item => `${item.hostname} - ${item.image}`"
           :rules="rules.host"
-          placeholder="choose host"
+          placeholder="choose a container"
           @change="() => { scan(); update(); }"
-          label="Select host"
+          label="Choose container"
           :loading="busy"
         >
           <template v-slot:progress>
@@ -93,7 +93,7 @@ export default {
     ...mapGetters({ hosts: 'hosts/data' }),
 
     host () {
-      return this.hosts.find((o) => o.id === this.form.host.id)
+      return this.hosts.find((o) => o.name === this.form.host.name)
     },
   },
 
@@ -117,15 +117,15 @@ export default {
         this.scan()
       }
 
-      if (this.value.host && this.value.host.id && !this.value.host.name) {
-        const host = this.hosts.find((o) => o.id === this.value.host.id)
+      if (this.value.host && this.value.host.name && !this.value.host.addr) {
+        const host = this.hosts.find((o) => o.name === this.value.host.name)
+        if (host) {
+          this.value.host.addr = host.aliases[0]
+        }
+      } else if (this.value.host && this.value.host.addr && !this.value.host.name) {
+        const host = this.hosts.find((o) => o.aliases.includes(this.value.host.addr))
         if (host) {
           this.value.host.name = host.name
-        }
-      } else if (this.value.host && this.value.host.name && !this.value.host.id) {
-        const host = this.hosts.find((o) => o.aliases.includes(this.value.host.name))
-        if (host) {
-          this.value.host.id = host.id
         }
       }
     },
@@ -133,8 +133,8 @@ export default {
     update () {
       this.$emit('input', {
         host: {
-          id: this.form.host.id,
-          name: this.host.aliases[0],
+          name: this.form.host.name,
+          addr: this.host.aliases[0],
         },
         port: this.form.port,
       })

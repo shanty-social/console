@@ -37,7 +37,7 @@ class ResultPreparer(FieldsPreparer):
                 return data.get_result()
             except Exception as e:
                 return exc_preparer.prepare({
-                    'type': e.__class__.__name__,
+                    'type': 'Exception',
                     'value': str(e),
                 })
         return super().lookup_data(lookup, data)
@@ -86,6 +86,9 @@ class TaskResource(BaseResource):
         "Delete task."
         task = get_object_or_404(Task, Task.id == pk)
         task.delete_instance()
+
+    def delete_list(self):
+        Task.delete().execute()
 
     def cancel(self, pk):
         "Cancel task."

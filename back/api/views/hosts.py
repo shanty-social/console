@@ -42,7 +42,7 @@ def _container_details(container):
             ports.add(int(port))
     aliases.remove(Config['Hostname'])
     return {
-        'id': container.attrs['Id'],
+        'name': container.attrs['Name'],
         'created': container.attrs['Created'],
         'hostname': Config['Hostname'],
         'service': Config['Labels'].get('com.docker.compose.service'),
@@ -101,7 +101,7 @@ def _sniff(s, host, port):
 class HostResource(BaseResource):
     "Manage docker hosts."
     preparer = FieldsPreparer(fields={
-        'id': 'id',
+        'name': 'name',
         'created': 'created',
         'hostname': 'hostname',
         'service': 'service',

@@ -10,6 +10,7 @@ module.exports = {
   outputDir: 'dist/',
   assetsDir: 'assets/',
   devServer: {
+    disableHostCheck: true,
     host: VUE_HOST,
     port: VUE_PORT,
     proxy: {
@@ -28,12 +29,15 @@ module.exports = {
         secure: false,
         ws: true
       },
-    }
+    },
+    watchOptions: {
+      ignored: /node_modules/
+    },
   },
   transpileDependencies: [
     'vuetify'
   ],
   configureWebpack: {
-    plugins: [new CompressionPlugin()]
+    plugins: [new CompressionPlugin()],
   }
 }

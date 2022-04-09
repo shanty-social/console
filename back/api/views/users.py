@@ -88,7 +88,7 @@ class UserResource(BaseResource):
         log_out_user()
 
     def whoami(self):
-        "Details of a particular service."
+        "Details of logged in user."
         user = get_logged_in_user()
         if not user:
             abort(404)
