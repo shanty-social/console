@@ -5,7 +5,7 @@ import requests
 from restless.preparers import FieldsPreparer
 from restless.resources import skip_prepare
 
-from flask import session, request, jsonify
+from flask import session, request
 
 from wtfpeewee.orm import model_form
 from flask_peewee.utils import get_object_or_404

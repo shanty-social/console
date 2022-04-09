@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 
 import gevent
 
@@ -12,7 +11,7 @@ from wtfpeewee.orm import model_form
 
 from conduit_client.ssh import load_key, save_host_keys, Tunnel
 
-from api.app import app, db, oauth, ssh
+from api.app import app, oauth, ssh
 from api.tasks import cron, defer
 from api.views import BaseResource, Form, abort
 from api.models import Endpoint, Message
