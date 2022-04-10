@@ -58,7 +58,11 @@ SHANTY_BASE_URL = os.getenv(
     'FLASK_SHANTY_BASE_URL', 'http://localhost:8000/')
 
 OAUTH_PROVIDERS = [
-    {'name': 'shanty', 'description': 'Default provider', 'url': SHANTY_BASE_URL},
+    {
+        'name': 'shanty',
+        'description': 'Default provider',
+        'url': SHANTY_BASE_URL,
+    },
 ]
 
 SHANTY_CLIENT_ID = os.getenv(
