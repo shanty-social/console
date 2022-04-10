@@ -18,22 +18,38 @@
           </v-badge>
         </v-btn>
       </template>
-      <v-list
+      <v-card
         v-if="messages.length > 0"
       >
-        <v-list-item
-          v-for="(item, index) in messages"
-          :key="index"
+        <v-list
+          class="scroll-list"
         >
-          {{ item.function }}
-          <v-list-item-action>
-            <v-icon
-              right
-              @click="deleteTask(item.id)"
-            >mdi-delete</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
+          <v-list-item
+            v-for="(item, index) in messages"
+            :key="index"
+          >
+            <v-list-item-title>{{ item.subject }}</v-list-item-title>
+            <v-list-item-icon>
+              <v-icon
+                class="text-right"
+                @click.stop.prevent="deleteMessage(item.id)"
+              >mdi-delete</v-icon>
+            </v-list-item-icon>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list>
+          <v-list-item>
+            <v-list-item-content>
+              <v-btn
+                @click="clearMessages"
+              >
+                Clear all
+              </v-btn>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-card>
     </v-menu>
   </div>
 </template>
@@ -57,11 +73,18 @@ export default {
   },
 
   methods: {
-    ...mapActions({ fetchMessages: 'messages/fetch' }),
+    ...mapActions({
+      fetchMessages: 'messages/fetch',
+      deleteMessage: 'messages/delete',
+      clearMessages: 'messages/clear',
+    }),
   }
 }
 </script>
 
 <style scoped>
-
+.scroll-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
 </style>

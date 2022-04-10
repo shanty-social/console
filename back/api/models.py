@@ -9,6 +9,7 @@ from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
     TextField, BooleanField, UUIDField, IntegerField,
 )
+from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
 from playhouse.signals import (
     pre_save, post_save, pre_delete, post_delete, pre_init,
@@ -22,55 +23,11 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.NullHandler())
 
 DEFAULT_SETTING_GROUP = 'default'
-ENDPOINT_TYPES = {
-    'direct': 'direct',
-    'tunnel': 'tunnel',
-}
-DNS_TYPES = {
-    'static': 'static',
-    'dynamic': 'dynamic',
-}
-DNS_PROVIDERS = {
-    'afraid': {
-        'url': 'http://freedns.afraid.org',
-        'options': ['User', 'Password'],
-        'description': 'Free DNS Hosting, Dynamic DNS Hosting, Static DNS '
-                       'Hosting, subdomain and domain hosting.',
-        'nameservers': 'ns1.afraid.org,ns2.afraid.org,ns3.afraid.org,'
-                       'ns4.afraid.org',
-    },
-    'cloudflare': {
-        'url': 'https://www.cloudflare.com',
-        'options': ['API_Token', 'Email', 'Zone'],
-        'description': 'Cloudflare DNS is an enterprise-grade authoritative '
-                       'DNS service that offers the fastest response time, '
-                       'unparalleled redundancy, and advanced security with '
-                       'built-in DDoS mitigation and DNSSEC.',
-    },
-    'hurricane': {
-        'url': 'https://dns.he.net',
-        'options': ['Password'],
-        'description': 'Hurricane Electric Free DNS Hosting portal. This tool '
-                       'will allow you to easily manage and maintain your '
-                       'forward and reverse DNS.',
-    },
-    'strato': {
-        'url': 'https://www.strato.com',
-        'options': ['User', 'Password'],
-        'description': 'STRATO is the reliable web hosting provider for anyone'
-                       ' seeking online success. We make web hosting fair and '
-                       'simple – at an unbeatable price and without '
-                       'unnecessary frills.',
-        'nameservers': 'ns1.strato.de,ns2.strato.de,ns4.strato.de',
-    },
-}
 
 
 def _get_models():
-    # TODO: can I use globals() or something else here?
-    import api.models
     return [
-        m for m in api.models.__dict__.values()
+        m for m in globals().values()
         if isinstance(m, type) and issubclass(m, db.Model)
     ]
 
@@ -78,8 +35,6 @@ def _get_models():
 def create_tables():
     "Create database tables."
     db.database.create_tables(_get_models(), safe=True)
-    uuid, created = Setting.get_or_create(
-        name='CONSOLE_UUID', defaults={'value': str(uuid4())})
 
 
 def drop_tables():
@@ -236,55 +191,41 @@ class TaskLog(db.Model):
         return f'<TaskLog {self.message}>'
 
 
-class Domain(db.Model):
-    "Domain model representing dns domain."
-    name = CharField(null=False, unique=True)
-    type = CharField(null=False, choices=DNS_TYPES.items())
-    provider = CharField(
-        null=False, choices=[
-            (name, name) for name in DNS_PROVIDERS.keys()
-        ])
-    options = JSONField()
-    created = DateTimeField(default=datetime.now)
+class User(db.Model):
+    "User model for local authentication."
+    username = CharField(null=False, unique=True)
+    password = CharField(null=False)
+    name = CharField(null=True)
+    active = BooleanField(default=True)
+    admin = BooleanField(default=False)
 
-    @staticmethod
-    def get_available_options(type, provider):
-        # NOTE: Make a copy, otherwise "ip address" is appended.
-        options = list(DNS_PROVIDERS.get(provider, {}).get('options', []))
-        if type == 'static':
-            options.append('ip address')
-        return options
+    def set_password(self, password):
+        self.password = make_password(password)
+
+    def check_password(self, password):
+        return check_password(password, self.password)
+
+
+class OAuthClient(db.Model):
+    "OAuth authorizations"
+    name = CharField(null=False, unique=True)
+    token = JSONField(null=False)
+    user = JSONField(null=False)
 
 
 class Endpoint(db.Model):
     "Endpoint model representing traffic routing."
     class Meta:
         indexes = [
-            (('path', 'domain'), True),
+            (('path', 'domain_name'), True),
         ]
 
     name = CharField(null=False, unique=True)
-    host = CharField(null=False)
-    http_port_external = IntegerField(null=True)
-    http_port_internal = IntegerField(null=True)
-    https_port_external = IntegerField(null=True)
-    https_port_internal = IntegerField(null=True)
+    addr = CharField(null=False)
+    host_name = CharField(null=False)
+    port = IntegerField(null=True)
     path = CharField(null=False, default='/')
-    type = CharField(null=False, choices=ENDPOINT_TYPES.items())
-    domain = ForeignKeyField(Domain, null=False, backref='entrypoints')
-    created = DateTimeField(default=datetime.now)
-
-
-class Torkey(db.Model):
-    """
-    Tor key representing key pair and resulting hostname (prefix denotes
-    vanity address).
-    """
-    prefix = CharField(null=True)
-    hostname = CharField(null=False, unique=True)
-    public = CharField(null=False)
-    secret = CharField(null=False)
-    created = DateTimeField(default=datetime.now)
+    domain_name = CharField(null=False)
 
 
 class Message(SignalMixin, db.Model):
@@ -293,6 +234,10 @@ class Message(SignalMixin, db.Model):
     body = TextField(null=False)
     read = BooleanField(default=False)
     created = DateTimeField(default=datetime.now)
+
+    @staticmethod
+    def send(subject=None, body=None):
+        return Message.create(subject=subject, body=body)
 
 
 @post_save(sender=Task)

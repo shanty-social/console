@@ -54,6 +54,15 @@ export default {
           }
           console.error(e)
         })
-    }
+    },
+
+    clear ({ commit }) {
+      axios
+        .delete('/api/tasks/')
+        .then(() => {
+          commit('set', [])
+        })
+        .catch(console.error)
+    },
   }
 }

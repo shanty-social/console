@@ -1,6 +1,7 @@
 import os
 import sys
 from urllib.parse import urlparse, urljoin
+from uuid import uuid4
 
 
 def get_from_env_or_file(var_name, default=None):
@@ -11,6 +12,22 @@ def get_from_env_or_file(var_name, default=None):
             return f.read()
     else:
         return os.getenv(var_name, default)
+
+
+def get_uuid(var_name):
+    try:
+        path = os.environ[var_name]
+    except KeyError:
+        return str(uuid4())
+    try:
+        with open(path, 'r') as f:
+            return f.read().strip()
+
+    except FileNotFoundError:
+        value = str(uuid4())
+        with open(path, 'w') as f:
+            f.write(value)
+        return value
 
 
 TEST = 'pytest' in sys.argv
@@ -36,8 +53,13 @@ SERVICE_URL = os.getenv('FLASK_SERVICE_URL', None)
 
 LOG_LEVEL = os.getenv('FLASK_LOG_LEVEL', 'ERROR')
 
+
 SHANTY_BASE_URL = os.getenv(
     'FLASK_SHANTY_BASE_URL', 'http://localhost:8000/')
+
+OAUTH_PROVIDERS = [
+    {'name': 'shanty', 'description': 'Default provider', 'url': SHANTY_BASE_URL},
+]
 
 SHANTY_CLIENT_ID = os.getenv(
     'FLASK_SHANTY_CLIENT_ID', '19bbc55f-0f6f-4fca-95bc-f86286db43da')
@@ -65,14 +87,17 @@ SHANTY_SERVER_METADATA_URL = urljoin(
     os.getenv('FLASK_SHANTY_METADATA_PATH', '/api/oauth2/metadata/')
 )
 
-OAUTH_PROVIDERS = [
-    'shanty',
-]
-
 SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
 
-AUTH_TOKEN = os.getenv('AUTH_TOKEN', None)
 CERT_DIR = os.getenv('CERT_DIR', '/var/lib/certs/')
 
 EXTERNAL_HOST = urlparse(os.getenv('EXTERNAL_HOST', 'http://localhost:8080'))
+
+SSH_HOST = os.getenv('SSH_HOST', 'ssh.homeland-social.com')
+SSH_PORT = int(os.getenv('SSH_PORT', 2222))
+SSH_KEY_FILE = os.getenv('SSH_KEY_FILE', '/var/lib/console/client.key')
+SSH_HOST_KEYS_FILE = os.getenv(
+    'SSH_HOST_KEYS_FILE', '/var/lib/console/authorized_keys')
+
+CONSOLE_UUID = get_uuid('FLASK_UUID_PATH')

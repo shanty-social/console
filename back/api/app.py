@@ -3,7 +3,9 @@ from pprint import pformat
 
 from authlib.integrations.flask_client import OAuth
 
-from flask import Flask, json, session
+from conduit_client import SSHManagerClient
+
+from flask import Flask, json
 from flask_socketio import SocketIO, disconnect
 from flask_peewee.db import Database
 from flask_caching import Cache
@@ -17,18 +19,31 @@ LOGGER.addHandler(logging.StreamHandler())
 
 
 def fetch_token(name):
+    from api.models import OAuthClient
     LOGGER.info('Fetching token %s', name)
-    return session.get(f'token.{name}')
+    client = OAuthClient.get_or_none(name=name)
+    try:
+        return client.token
+    except AttributeError:
+        return None
 
 
-def update_token(name, token):
+def update_token(name, token, **kwargs):
+    from api.models import OAuthClient
     LOGGER.info('Updating token %s: %s', name, token)
-    session[f'token.{name}'] = token
+    defaults = kwargs.copy()
+    defaults['token'] = token
+    client, created = OAuthClient.get_or_create(name=name, defaults=defaults)
+    if not created:
+        client.token = token
+        client.save()
+    return client
 
 
 def delete_token(name):
-    LOGGER.info('Deleting token %s', name)
-    session.pop(f'token.{name}', None)
+    from api.models import OAuthClient
+    q = OAuthClient.delete().where(OAuthClient.name == name)
+    q.execute()
 
 
 LOGGER.debug('Running with config: %s', pformat(config))
@@ -61,5 +76,12 @@ oauth = OAuth(
     app, cache=cache, fetch_token=fetch_token, update_token=update_token)
 for provider in config.OAUTH_PROVIDERS:
     oauth.register(
-        name=provider, client_kwargs={'scope': 'openid email profile'})
+        name=provider['name'], client_kwargs={'scope': 'openid email profile'})
 Session(app)
+ssh = SSHManagerClient(
+    host=config.SSH_HOST,
+    port=config.SSH_PORT,
+    user=config.CONSOLE_UUID,
+    key=config.SSH_KEY_FILE,
+    host_keys=config.SSH_HOST_KEYS_FILE,
+)

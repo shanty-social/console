@@ -1,8 +1,9 @@
 import ssl
-import socket
 import logging
 
 import docker
+
+from gevent import socket
 
 from flask import request
 
@@ -29,26 +30,27 @@ def _container_details(container):
     "Get details of container."
     NetworkSettings = container.attrs['NetworkSettings']
     Config = container.attrs['Config']
-    aliases, addresses, ports = [], [], []
+    aliases, addresses, ports = set(), set(), set()
     for network in NetworkSettings['Networks'].values():
         if network.get('Aliases'):
-            aliases.extend(network['Aliases'])
+            aliases.update(network['Aliases'])
         if network.get('IPAddress'):
-            addresses.append(network['IPAddress'])
+            addresses.add(network['IPAddress'])
     for port in Config.get('ExposedPorts', {}).keys():
         port, type = port.split('/')
         if type == 'tcp':
-            ports.append(int(port))
+            ports.add(int(port))
+    aliases.remove(Config['Hostname'])
     return {
-        'id': container.attrs['Id'],
+        'name': container.attrs['Name'],
         'created': container.attrs['Created'],
         'hostname': Config['Hostname'],
         'service': Config['Labels'].get('com.docker.compose.service'),
         'image': Config['Image'],
         'mode': Config.get('HostConfig', {}).get('NetworkMode'),
-        'aliases': aliases,
-        'addresses': addresses,
-        'ports': ports,
+        'aliases': list(aliases),
+        'addresses': list(addresses),
+        'ports': list(ports),
     }
 
 
@@ -99,7 +101,7 @@ def _sniff(s, host, port):
 class HostResource(BaseResource):
     "Manage docker hosts."
     preparer = FieldsPreparer(fields={
-        'id': 'id',
+        'name': 'name',
         'created': 'created',
         'hostname': 'hostname',
         'service': 'service',
@@ -123,8 +125,7 @@ class HostResource(BaseResource):
             pass
         d = docker.DockerClient(base_url=f'unix://{DOCKER_SOCKET_PATH}')
         containers = d.containers.list(**kwargs)
-        # from pprint import pprint
-        # pprint(containers[0].attrs)
+        from pprint import pprint; pprint(containers[0].attrs)
         return [
             _container_details(c) for c in containers
         ]
@@ -163,6 +164,8 @@ class HostResource(BaseResource):
 
             try:
                 s.connect((host, port))
+                if port == s.getsockname()[1]:
+                    continue
                 LOGGER.debug('Connected to %s:%i', host, port)
                 results_ports[port] = _sniff(s, host, port)
 

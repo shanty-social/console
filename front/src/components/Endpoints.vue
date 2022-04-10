@@ -19,23 +19,33 @@
           :data="item"
         >
           <v-list-item-icon>
-            <v-icon large>mdi-package-variant</v-icon>
+            <v-icon large>mdi-web</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title>{{ item.hostname }}</v-list-item-title>
+            <v-list-item-title>{{ item.name }}</v-list-item-title>
             <v-list-item-subtitle>
-              <span class="text--primary">Created</span> &mdash; <timeago :datetime="item.created"/>
+              <span class="text--primary">port</span> &mdash; {{ item.port }}
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-content>
-            <v-list-item-title>Image</v-list-item-title>
-            <v-list-item-subtitle>{{ item.image }}</v-list-item-subtitle>
+            <v-list-item-title>Host</v-list-item-title>
+            <v-list-item-subtitle>{{ item.host }}</v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-content>
+            <v-list-item-title>Domain</v-list-item-title>
+            <v-list-item-subtitle>{{ item.domain_name }}</v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
             <v-btn
               icon
-              @click="remove(item.uid)"
+              :to="`/endpoint?id=${item.id}`"
             ><v-icon>mdi-pencil-outline</v-icon></v-btn>
+          </v-list-item-action>
+          <v-list-item-action>
+            <v-btn
+              icon
+              @click="remove(item.id)"
+            ><v-icon>mdi-web-remove</v-icon></v-btn>
           </v-list-item-action>
         </v-list-item>
       </v-list>
@@ -59,8 +69,9 @@ export default {
 
   methods: {
     ...mapActions({
-      fetch: 'endpoints/fetch'
-    })
+      fetch: 'endpoints/fetch',
+      remove: 'endpoints/remove',
+    }),
   }
 }
 </script>

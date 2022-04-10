@@ -1,13 +1,22 @@
-from flask import redirect, session, request, abort, jsonify
+from urllib.parse import urljoin
+
+import requests
+
+from restless.preparers import FieldsPreparer
+from restless.resources import skip_prepare
+
+from flask import session, request
+
+from wtfpeewee.orm import model_form
+from flask_peewee.utils import get_object_or_404
 
 from api.app import oauth, update_token, delete_token
-from api.auth import (
-    log_in_user, log_out_user, get_logged_in_user,
-)
 from api.tasks import cron
-from api.views import url_for, url_redir
-from api.config import OAUTH_PROVIDERS
-from api.models import Setting
+from api.views import (
+    url_for, url_redir, Form, BaseResource, abort, RedirectResponse
+)
+from api import config
+from api.models import OAuthClient
 
 
 @cron('*/5 * * * *')
@@ -15,52 +24,96 @@ def refresh_tokens():
     "Refresh oauth tokens."
 
 
-def providers():
-    return jsonify(OAUTH_PROVIDERS)
+OAuthClientForm = model_form(OAuthClient, base_class=Form)
 
 
-def whoami():
-    return jsonify(get_logged_in_user())
+client_preparer = FieldsPreparer(fields={
+    'name': 'name',
+    'user': 'user',
+})
 
 
-def start(service_name):
-    # Kick off OAuth2 authorization.
-    next = url_redir(request.args.get('next', '/'))
-    service = getattr(oauth, service_name, None)
-    if service is None:
-        abort(404)
-    if service.token:
-        # Validate token.
-        r = oauth.shanty.get('/api/users/whoami/')
-        if r.status_code == 200:
-            return redirect(next)
-        # Delete invalid token.
-        delete_token(service_name)
-    session['next'] = next
-    redirect_uri = url_for(
-        'authorize', service_name=service_name)
-    return service.authorize_redirect(redirect_uri, in_fragment=True)
+class OAuthClientResource(BaseResource):
+    "Manage OAuth Clients"
+    preparer = client_preparer
+    extra_actions = {
+        'providers': ['GET'],
+    }
+    extra_details = {
+        'start': ['GET'],
+        'authorize': ['GET'],
+        'domains': ['GET'],
+        'check_domain': ['POST'],
+    }
 
+    def _get_service(self, name):
+        try:
+            return getattr(oauth, name)
+        except AttributeError:
+            abort(404)
 
-def authorize(service_name):
-    # Return from OAuth2 Authorization
-    next = session.pop('next', '/')
-    service = getattr(oauth, service_name, None)
-    if service is None:
-        abort(404)
-    token = service.authorize_access_token()
-    update_token('shanty', token)
-    # Get console token.
-    r = service.post(
-        '/api/consoles/', data={'uuid': Setting.get_setting('CONSOLE_UUID')})
-    if r.status_code == 201:
-        Setting.set_setting('CONSOLE_TOKEN', r.json().get('token'))
-    log_in_user(token.get('userinfo'))
-    return redirect(next)
+    def is_authenticated(self):
+        if self.endpoint in ('providers'):
+            return True
+        return super().is_authenticated()
 
+    def list(self):
+        return OAuthClient.select()
 
-def end(service_name):
-    next = url_redir(request.args.get('next', '/'))
-    delete_token(service_name)
-    log_out_user()
-    return redirect(next)
+    def detail(self, pk):
+        return get_object_or_404(OAuthClient, OAuthClient.name == pk)
+
+    def delete(self, pk):
+        client = get_object_or_404(OAuthClient, OAuthClient.name == pk)
+        client.delete_instance()
+
+    @skip_prepare
+    def start(self, pk):
+        next = request.args.get('next', '/#/settings')
+        service = self._get_service(pk)
+        if service.token:
+            # Validate token.
+            if service.get('/api/users/whoami/').status_code == 200:
+                raise RedirectResponse(url_redir(next))
+            # Delete invalid token.
+            delete_token(pk)
+        session['next'] = next
+        redirect_uri = url_for(
+            'api_oauthclient_authorize', pk=pk)
+        r = service.authorize_redirect(redirect_uri, in_fragment=True)
+        raise RedirectResponse(r.headers['Location'], code=r.status)
+
+    def authorize(self, pk):
+        next = url_redir(session.pop('next', '/#/settings'))
+        service = self._get_service(pk)
+        token = service.authorize_access_token()
+        update_token('shanty', token, user=token.get('userinfo'))
+        raise RedirectResponse(next)
+
+    @skip_prepare
+    def providers(self):
+        providers = []
+        for provider in config.OAUTH_PROVIDERS[:]:
+            name = provider['name']
+            base_url = getattr(config, f'{name.upper()}_BASE_URL')
+            r = requests.get(urljoin(base_url, '/api/hosts/shared/'))
+            provider['domains'] = r.json()
+            providers.append(provider)
+        return {'objects': providers}
+
+    @skip_prepare
+    def domains(self, pk):
+        service = self._get_service(pk)
+        r = service.get('/api/hosts/shared/')
+        if r.status_code != 200:
+            abort(r.status_code, {'message': r.reason})
+        return r.json()
+
+    @skip_prepare
+    def check_domain(self, pk):
+        service = self._get_service(pk)
+        name = self.data.get('name')
+        if not name:
+            abort(400, {'message': 'Invalid request'})
+        r = service.post('/api/hosts/check/', data={'name': name})
+        abort(r.status_code, {'message': r.reason})

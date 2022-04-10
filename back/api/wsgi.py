@@ -6,9 +6,14 @@ from uwsgi_chunked import Chunked
 from api import urls  # noqa: F401
 from api.app import app as _app  # noqa: F401
 from api.models import create_tables
-from api.tasks import start_scheduler
+from api.tasks import start_background_tasks
+
+from gevent import monkey
+
 from api.config import LOG_LEVEL
 
+
+monkey.patch_thread()
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -17,6 +22,5 @@ logging.basicConfig(
 )
 
 create_tables()
-start_scheduler()
-
+start_background_tasks()
 app = Chunked(_app)

@@ -1,26 +1,49 @@
 from functools import wraps
 
-from flask import session, request, abort
+from flask import g, session, abort
 
-from api.app import app
+from api.models import User
 
 
 def get_logged_in_user():
-    "Get currently logged in user."
     if session.get('authenticated'):
-        return session.get('user')
+        if getattr(g, 'user', None):
+            return g.user
+
+        try:
+            user = User \
+                .select() \
+                .where(
+                    User.active == True,  # noqa: E712
+                    User.id == session.get('user_pk')
+                ) \
+                .get()
+            return user
+
+        except User.DoesNotExist:
+            pass
 
 
-def log_in_user(userinfo):
-    "Log user in."
+def log_in_user(username, password):
+    try:
+        user = User.get(
+            User.username == username, User.active == True)  # noqa: E712
+
+    except User.DoesNotExist:
+        abort(401)
+
+    if not user.check_password(password):
+        abort(401)
+
     session['authenticated'] = True
-    session['user'] = userinfo
-    return userinfo
+    session['user_pk'] = user._pk
+    g.user = user
+    return user
 
 
 def log_out_user():
-    "Log user out."
     session.clear()
+    g.user = None
 
 
 def session_auth():
@@ -28,20 +51,7 @@ def session_auth():
     return get_logged_in_user() is not None
 
 
-def token_auth():
-    "Check auth token in Authorization: header."
-    token = app.config['AUTH_TOKEN']
-    if not token:
-        return
-    authz = request.headers.get('authorization')
-    if not authz:
-        return
-    if authz.startswith('Bearer '):
-        authz = authz[7:]
-    return authz == token
-
-
-def requires_auth(auth_methods=[token_auth, session_auth]):
+def requires_auth(auth_methods=[session_auth]):
     """
     Decorator that requires one of our auth methods for a function based view.
     """

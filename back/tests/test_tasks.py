@@ -73,14 +73,12 @@ def test_cron():
     crons = len(tasks.CRONTAB)
     tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
     assert len(tasks.CRONTAB) == crons + 1, 'Crontab did not schedule'
-    tasks.start_scheduler(interval=0.1)
-    time.sleep(0.2)
+    tasks.start_background_tasks()
+    time.sleep(0.1)
     assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'
-    tasks.stop_scheduler()
 
 
-#def test_task_exception(authenticated):
-#    t = Task(function=test_task_exception, result=Exception('BOOM'))
-#    t.save()
-#    r = authenticated.get('/api/tasks/')
-#    assert r.status_code == 200, 'Invalid status code'
+def test_task_exception(authenticated):
+    t = Task.create(function=test_task_exception, result=Exception('BOOM'))
+    r = authenticated.get('/api/tasks/')
+    assert r.status_code == 200, 'Invalid status code'

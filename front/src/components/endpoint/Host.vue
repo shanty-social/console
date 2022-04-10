@@ -4,18 +4,18 @@
     ref="form"
   >
     <p class="text-h4">Host / server</p>
-    <p>First we need a service and port to expose. Choose a host and an open port.</p>
+    <p>First choose a container and port to expose. Choose a container, and then a port once the list is populated.</p>
     <v-row>
-      <v-col>
+      <v-col md="8">
         <v-select
-          v-model="form.host"
+          v-model="form.host.name"
           :items="hosts"
+          item-value="name"
           :item-text="item => `${item.hostname} - ${item.image}`"
-          return-object
           :rules="rules.host"
-          placeholder="choose host"
-          @change="scan"
-          label="Select host"
+          placeholder="choose a container"
+          @change="() => { scan(); update(); }"
+          label="Choose container"
           :loading="busy"
         >
           <template v-slot:progress>
@@ -27,14 +27,14 @@
           </template>
         </v-select>
       </v-col>
-      <v-col>
+      <v-col md="4">
         <v-combobox
           v-model="form.port"
           :rules="rules.port"
           :items="ports"
-          :disabled="ports === null"
+          :hide-spin-buttons="true"
           @change="update"
-          label="Select port"
+          label="Select or enter port"
           type="number"
         ></v-combobox>
       </v-col>
@@ -64,16 +64,15 @@ export default {
   data () {
     return {
       form: {
-        host: (this.value) ? this.value.host : null,
+        host: (this.value) ? this.value.host : {},
         port: (this.value) ? this.value.port : null,
-        other: null
       },
       rules: {
         host: [
           v => (v !== undefined) || 'Is required'
         ],
         port: [
-          v => (v > 0 || v === 'other') || 'Choose a port'
+          v => (v > 0) || 'Choose a port'
         ],
       },
       error: null,
@@ -83,35 +82,79 @@ export default {
   },
 
   mounted () {
-    this.fetchHosts()
+    this
+      .fetch()
+      .then(() => {
+        this.populateValue()
+      })
   },
 
   computed: {
     ...mapGetters({ hosts: 'hosts/data' }),
+
+    host () {
+      return this.hosts.find((o) => o.name === this.form.host.name)
+    },
+  },
+
+  watchers: {
+    value () {
+      this.populateValue()
+    }
   },
 
   methods: {
-    ...mapActions({ fetchHosts: 'hosts/fetch' }),
+    ...mapActions({ fetch: 'hosts/fetch' }),
+
+    populateValue () {
+      if (!this.value) {
+        return
+      }
+
+      if (this.value.port) {
+        this.form.port = this.value.port
+      } else {
+        this.scan()
+      }
+
+      if (this.value.host && this.value.host.name && !this.value.host.addr) {
+        const host = this.hosts.find((o) => o.name === this.value.host.name)
+        if (host) {
+          this.value.host.addr = host.aliases[0]
+        }
+      } else if (this.value.host && this.value.host.addr && !this.value.host.name) {
+        const host = this.hosts.find((o) => o.aliases.includes(this.value.host.addr))
+        if (host) {
+          this.value.host.name = host.name
+        }
+      }
+    },
 
     update () {
       this.$emit('input', {
-        host: this.form.host,
+        host: {
+          name: this.form.host.name,
+          addr: this.host.aliases[0],
+        },
         port: this.form.port,
       })
     },
 
     scan() {
+      if (!this.host) {
+        return
+      }
       this.busy = true
       this.ports = null
       const data = {
-        host: this.form.host.addresses[0]
+        host: this.host.addresses[0]
       }
       axios
         .post('/api/hosts/port_scan/', data, { params: {'only_open': 'true' }})
         .then((r) => {
           this.busy = false;
           this.ports = []
-          this.form.host.ports.forEach((port) => {
+          this.host.ports.forEach((port) => {
             this.ports.push(port)
           })
           Object.keys(r.data.ports).forEach(port => {

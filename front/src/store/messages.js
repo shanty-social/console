@@ -50,6 +50,15 @@ export default {
           }
           console.error(e)
         })
-    }
+    },
+
+    clear ({ commit }) {
+      axios
+        .delete('/api/messages/')
+        .then(() => {
+          commit('set', [])
+        })
+        .catch(console.error)
+    },
   }
 }

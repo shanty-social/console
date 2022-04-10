@@ -2,7 +2,7 @@
   <div>
     <v-btn
       v-if="!isAuthenticated"
-      href="/api/oauth/shanty/"
+      to="/authentication"
     >
       Login
       <v-icon>mdi-login-variant</v-icon>
@@ -12,7 +12,7 @@
       @click.prevent="onLogout"
     >
       Logout
-      <v-icon>mdi-logout-variant</v-icon>
+      <v-icon class="ml-2">mdi-logout-variant</v-icon>
     </v-btn>
   </div>
 </template>
@@ -38,8 +38,7 @@ export default {
 
   methods: {
     ...mapActions({
-      whoami: 'auth/whoami',
-      fetchUserCount: 'auth/fetchUserCount'
+      whoami: 'auth/whoami'
     }),
 
     onLogout() {
@@ -54,7 +53,6 @@ export default {
 
   mounted () {
     this.whoami()
-    this.fetchUserCount()
   }
 }
 </script>

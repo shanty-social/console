@@ -10,7 +10,6 @@ flask-caching = "*"
 flask-peewee = "*"
 flask-session = "*"
 stopit = "*"
-upnpy = {git = "https://github.com/btimby/upnpy.git", ref = "exceptions"}
 peewee = "*"
 pycron = "*"
 restless = "*"
@@ -18,12 +17,9 @@ docker = "*"
 uwsgi = "*"
 authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0dd74599191a7726600bfbdda2"}
 wtf-peewee = "*"
-python-ddns = "*"
 uwsgi-chunked = "==0.1.8"
-pyyaml = "*"
-mkpy224o = "==0.1.4"
 gevent = "*"
-acme = "*"
+conduit-client = {subdirectory = "client", ref = "9716d7086a7d25f646af153e1382734c304018c7", git = "https://github.com/shanty-social/conduit.git"}
 
 [dev-packages]
 flake8 = "*"

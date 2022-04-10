@@ -27,7 +27,7 @@ export default {
     fetch({ commit }) {
       return new Promise((resolve, reject) => {
         axios
-        .get('/api/hosts/')
+        .get('/api/oauth/')
         .then((r) => {
           commit('set', r.data.objects)
           resolve()

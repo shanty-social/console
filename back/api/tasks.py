@@ -13,7 +13,6 @@ from api.models import Task
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
-CRON = None
 CRONTAB = []
 
 
@@ -90,20 +89,17 @@ class RepeatTimer(threading.Timer):
 
     def run(self):
         while True:
-            self.finished.wait(self.interval)
-            if self.finished.is_set():
-                break
             try:
                 self.function(*self.args, **self.kwargs)
 
             except Exception:
                 LOGGER.exception('Error in timer function.')
 
+            if self.finished.wait(self.interval):
+                break
 
-def start_scheduler(interval=60.0):
-    "Start a scheduler to run schedule cron tasks."
-    global CRON
 
+def start_background_tasks(interval=60.0):
     def _scheduler():
         LOGGER.debug('Scheduler checking %i tasks', len(CRONTAB))
         for schedule, f, args, kwargs in CRONTAB:
@@ -113,15 +109,7 @@ def start_scheduler(interval=60.0):
                 defer(f, args, kwargs)
 
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
-    CRON = RepeatTimer(interval, _scheduler, daemon=True)
-    CRON.start()
-
-
-def stop_scheduler():
-    "Terminate the scheduler."
-    global CRON
-    CRON.cancel()
-    CRON = None
+    RepeatTimer(interval, _scheduler, daemon=True).start()
 
 
 def defer(f, args=(), kwargs={}, timeout=None,

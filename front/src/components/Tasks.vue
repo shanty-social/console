@@ -9,8 +9,8 @@
         >
           <v-badge
             color="deep-purple"
-            :value="active.length"
-            :content="active.length"
+            :value="tasks.length"
+            :content="tasks.length"
           >
             <v-icon
               :class="{ rotating: active.length }"
@@ -18,22 +18,42 @@
           </v-badge>
         </v-btn>
       </template>
-      <v-list
+
+      <v-card
         v-if="tasks.length > 0"
       >
-        <v-list-item
-          v-for="(item, index) in tasks"
-          :key="index"
+        <v-list
+          class="scroll-list"
         >
-          {{ item.function }}
-          <v-list-item-action>
-            <v-icon
-              right
-              @click="deleteTask(item.id)"
-            >mdi-delete</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
+          <v-list-item
+            v-for="(item, index) in tasks"
+            :key="index"
+          >
+            <v-list-item-icon>
+              <v-icon>{{ taskIcon(item) }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-title>{{ item.function }}</v-list-item-title>
+            <v-list-item-icon>
+              <v-icon
+                class="text-right"
+                @click.stop.prevent="deleteTask(item.id)"
+              >mdi-delete</v-icon>
+            </v-list-item-icon>
+          </v-list-item>
+        </v-list>
+        <v-divider></v-divider>
+        <v-list>
+          <v-list-item>
+            <v-list-item-content>
+              <v-btn
+                @click="clearTasks"
+              >
+                Clear all
+              </v-btn>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-card>
     </v-menu>
   </div>
 </template>
@@ -62,7 +82,18 @@ export default {
     ...mapActions({
       fetchTasks: 'tasks/fetch',
       deleteTask: 'tasks/delete',
-    })
+      clearTasks: 'tasks/clear',
+    }),
+
+    taskIcon (task) {
+      if (!task.completed) {
+        return 'mdi-cog-outline'
+      } else if (task.result && task.result.type === 'Exception') {
+        return 'mdi-alert-circle-outline'
+      } else {
+        return 'mdi-check-outline'
+      }
+    },
   },
 
   mounted () {
@@ -107,5 +138,10 @@ export default {
   -o-animation: rotating 0.5s linear infinite;
   -o-animation: rotating 0.5s linear infinite;
   animation: rotating 0.5s linear infinite;
+}
+
+.scroll-list {
+  max-height: 300px;
+  overflow-y: auto;
 }
 </style>
