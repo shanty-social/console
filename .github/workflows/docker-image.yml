@@ -41,14 +41,14 @@ jobs:
         run: |
           docker buildx build -f docker/console/Dockerfile \
             --push \
-            --tag ${{secrets.DOCKER_USER}}/console:latest \
-            --tag ${{secrets.DOCKER_USER}}/console:${{env.tag}} \
+            --tag ${{secrets.DOCKER_ORG}}/console:latest \
+            --tag ${{secrets.DOCKER_ORG}}/console:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
           docker buildx build -f docker/tor/Dockerfile \
             --push \
-            --tag ${{secrets.DOCKER_USER}}/tor:latest \
-            --tag ${{secrets.DOCKER_USER}}/tor:${{env.tag}} \
+            --tag ${{secrets.DOCKER_ORG}}/tor:latest \
+            --tag ${{secrets.DOCKER_ORG}}/tor:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
       - name: Docker Hub Description
@@ -56,7 +56,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD_ }}
-          repository: shantysocial/console
+          repository: ${{ secrets.DOCKER_ORG }}/console
 
       - name: Tarball
         run: |
