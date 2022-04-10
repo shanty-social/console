@@ -70,9 +70,7 @@ def check_endpoint_ssh():
         yield f'Setting up endpoint {endpoint.name}'
         ssh.add_tunnel(tunnel)
 
-    message = f'Set up {len(endpoints)} endpoints'
-    Message.send('SSH health good', message)
-    return message
+    return f'Set up {len(endpoints)} endpoints'
 
 
 def setup_endpoint_remote(domain_name, service_name):

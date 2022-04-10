@@ -12,7 +12,7 @@
       @click.prevent="onLogout"
     >
       Logout
-      <v-icon>mdi-logout-variant</v-icon>
+      <v-icon class="ml-2">mdi-logout-variant</v-icon>
     </v-btn>
   </div>
 </template>

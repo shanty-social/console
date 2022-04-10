@@ -11,7 +11,7 @@
           light
         >
           Homeland console
-          <v-icon>mdi-earth</v-icon>
+          <v-icon class="ml-2">mdi-console</v-icon>
         </v-btn>
       </div>
 

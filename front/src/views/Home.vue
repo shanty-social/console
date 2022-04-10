@@ -4,23 +4,31 @@
       <v-layout justify-center>
         <v-flex xs8 sm8 md6>
           <p class="text-h4">Welcome</p>
-          <p>Link with a service and then set up some endpoints.</p>
-
+          <p>Link an online service and then set up an endpoint.</p>
+          <p>Each online service acts like a reverse VPN, connecting internet users to your website.</p>
+          <p>Endpoints link a specific domain name to your chosen container.</p>
           <v-list>
             <v-list-item
               v-for="(item, i) of items"
               :key="i"
             >
               <v-list-item-icon>
-                <v-icon x-large>mdi-earth</v-icon>
+                <v-icon x-large>mdi-cloud-outline</v-icon>
               </v-list-item-icon>
               <v-list-item-content>
-                <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
-                Foobar
+                <v-list-item-subtitle>
+                  <a target="new" :href="item.url">{{ item.name }}</a>
+                </v-list-item-subtitle>
+                {{ item.description }}
               </v-list-item-content>
               <v-list-item-content>
-                <v-list-item-subtitle>domains</v-list-item-subtitle>
-                {{ item.domains.join(', ') }}
+                <v-list-item-subtitle>Available domains</v-list-item-subtitle>
+                <a
+                  v-for="domain of item.domains"
+                  :key="domain"
+                  target="new"
+                  :href="`https://www.${domain}`"
+                >{{domain}}</a>
               </v-list-item-content>
               <v-list-item-content>
                 <v-list-item-subtitle>Endpoints</v-list-item-subtitle>
@@ -32,11 +40,18 @@
               </v-list-item-content>
               <v-list-item-action>
                 <v-btn
-                  :href="`/api/oauth/${item.name}/start/`"
                   v-if="!item.registered"
+                  :href="`/api/oauth/${item.name}/start/`"
                 >
                   Activate
-                  <v-icon>mdi-chevron-right</v-icon>
+                  <v-icon class="ml-2">mdi-chevron-right</v-icon>
+                </v-btn>
+                <v-btn
+                  v-else
+                  to="/endpoint"
+                >
+                  Add Endpoint
+                  <v-icon class="ml-2">mdi-earth-plus</v-icon>
                 </v-btn>
               </v-list-item-action>
             </v-list-item>

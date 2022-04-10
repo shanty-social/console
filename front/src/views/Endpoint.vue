@@ -21,12 +21,22 @@
             <v-card-actions>
               <v-btn
                 @click="onSave"
-              >Save</v-btn>
-              <v-btn to="/">Cancel</v-btn>
+              >
+                Save
+                <v-icon class="ml-2">mdi-content-save-outline</v-icon>
+              </v-btn>
+              <v-btn to="/">
+                Cancel
+                <v-icon class="ml-2">mdi-window-close</v-icon>
+              </v-btn>
               <v-btn
+                v-if="editing"
                 color="error"
                 @click="onDelete"
-              >Delete</v-btn>
+              >
+                Delete
+                <v-icon class="ml-2">mdi-delete-outline</v-icon>
+              </v-btn>
             </v-card-actions>
           </v-card>
         </v-flex>

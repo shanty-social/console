@@ -53,12 +53,13 @@ SERVICE_URL = os.getenv('FLASK_SERVICE_URL', None)
 
 LOG_LEVEL = os.getenv('FLASK_LOG_LEVEL', 'ERROR')
 
-OAUTH_PROVIDERS = [
-    {'name': 'shanty', 'description': 'Default provider'},
-]
 
 SHANTY_BASE_URL = os.getenv(
     'FLASK_SHANTY_BASE_URL', 'http://localhost:8000/')
+
+OAUTH_PROVIDERS = [
+    {'name': 'shanty', 'description': 'Default provider', 'url': SHANTY_BASE_URL},
+]
 
 SHANTY_CLIENT_ID = os.getenv(
     'FLASK_SHANTY_CLIENT_ID', '19bbc55f-0f6f-4fca-95bc-f86286db43da')
