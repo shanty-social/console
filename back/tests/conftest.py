@@ -8,7 +8,6 @@ from flask import g
 
 from api import config
 
-
 DBFD, DBPATH = tempfile.mkstemp()
 atexit.register(os.remove, DBPATH)
 os.close(DBFD)
@@ -20,6 +19,7 @@ config.TESTING = True
 from api import urls
 from api.app import db, app
 from api.models import create_tables, drop_tables, User
+
 
 @pytest.fixture(autouse=True)
 def database():

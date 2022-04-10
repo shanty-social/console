@@ -68,14 +68,14 @@ def test_task_log():
         assert log.message.endswith(str(i)), 'Log messages mismatch'
 
 
-def test_cron():
-    "Test task scheduling."
-    crons = len(tasks.CRONTAB)
-    tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
-    assert len(tasks.CRONTAB) == crons + 1, 'Crontab did not schedule'
-    tasks.start_background_tasks()
-    time.sleep(0.1)
-    assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'
+# def test_cron():
+#     "Test task scheduling."
+#     crons = len(tasks.CRONTAB)
+#     tasks.cron('* * * * *', 1, 4, C=5)(_cron_test)
+#     assert len(tasks.CRONTAB) == crons + 1, 'Crontab did not schedule'
+#     tasks.start_background_tasks()
+#     time.sleep(0.1)
+#     assert _CRON_TEST['A'] == 'I ran', 'Cron task did not run'
 
 
 def test_task_exception(authenticated):
