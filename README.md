@@ -1,22 +1,11 @@
-# console
-Appliance UI
+# Homeland social console
 
-## net container
+The homeland social console is a container meant to be run within docker on your computer or home server. It allows you to expose containers as websites on the Internet. All the typical steps are done for you:
 
-The net container is used on the appliance to control the wifi interface. It utilizes wpa_supplicant to create an access point. To test this locally, you need a wifi interface to use with it. Purchase a usb wifi dongle, I am using a ralink 5370.
+ - SSL certificates are obtained and installed on your behalf. All website traffic is encrypted end-to-end.
+ - DNS is handled automatically, you can select a subdomain of your favorite available shared domain such as `you.homeland.social`.
+ - Your internet connection is used for traffic, but your IP address is not exposed publicly.
 
-On ubuntu or other distros using NetworkManager, you can disable NetworkManager's control of this interface by adding the following to `/etc/NetworkManager/NetworkManager.conf`.
+Think of homeland social as a reverse VPN. Instead of allowing you to connect to websites from an IP address other than your own, this system allows others to connect to your web site using an address other than your own.
 
-```
-[main]
-plugins=ifupdown,keyfile
-
-...
-
-[keyfile]
-unmanaged-devices=mac:1c:bf:ce:6b:c8:82
-```
-
-Replace the mac address above with your mac address.
-
-This container exports the `/var/run/wpa_supplicant` directory, which allows the console application to control wpa_supplicant.
+![overview](/docs/images/overview.png)
