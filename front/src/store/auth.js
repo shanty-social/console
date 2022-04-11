@@ -45,7 +45,7 @@ export default {
             resolve(state.whoami)
           })
           .catch(() => {
-            commit('setWhoami', false)
+            commit('setWhoami', null)
             resolve(null)
           })
       })

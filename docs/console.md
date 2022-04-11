@@ -9,6 +9,16 @@ This image provides a uWSGI server that serves a Flask / Python API as well as a
 
 The console will then maintain an SSH tunnel to receive your website traffic and deliver it to your chosen container & port.
 
+## Using this image
+
+```bash
+$ docker -ti homelandsocial/console
+```
+
+### Example docker-compose
+
+[https://raw.githubusercontent.com/homeland-social/console/master/docker-compose.yml](https://raw.githubusercontent.com/homeland-social/console/master/docker-compose.yml)
+
 ## Environment variables
 
 | Name | Description | Default |

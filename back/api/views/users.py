@@ -91,7 +91,7 @@ class UserResource(BaseResource):
         "Details of logged in user."
         user = get_logged_in_user()
         if not user:
-            abort(404)
+            abort(401)
         return user
 
     @skip_prepare

@@ -12,4 +12,4 @@ autobuild: venv
 
 
 clean:
-	rm -rf venv
+	rm -rf venv _build _static _templates docs
