@@ -4,7 +4,7 @@
 
 The homeland social console is a container meant to be run within docker on your computer or home server. It allows you to expose containers as websites on the Internet.
 
-See the [full documentation](https://homeland-social-console.readthedocs.io/).
+See [full documentation](https://homeland-social-console.readthedocs.io/).
 
 All the typical steps necessary to host a website are done for you:
 
@@ -14,4 +14,4 @@ All the typical steps necessary to host a website are done for you:
 
 Think of homeland social as a reverse VPN. Instead of allowing you to connect to websites from an IP address other than your own, this system allows others to connect to your web site using an address other than your own.
 
-![overview](https://github.com/homeland-social/console/raw/master/docs/images/overview.png)
+![overview](https://raw.githubusercontent.com/homeland-social/console/master/docs/images/overview.png)
