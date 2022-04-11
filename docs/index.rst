@@ -11,6 +11,7 @@ Welcome to homeland-social-website's documentation!
    :caption: Contents:
 
    README.md
+   console.md
 
 
 Indices and tables

@@ -45,15 +45,16 @@ jobs:
             --tag ${{secrets.DOCKER_ORG}}/console:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
-          docker buildx build -f docker/tor/Dockerfile \
-            --push \
-            --tag ${{secrets.DOCKER_ORG}}/tor:latest \
-            --tag ${{secrets.DOCKER_ORG}}/tor:${{env.tag}} \
-            --platform linux/amd64,linux/arm/v7,linux/arm64 .
+          # docker buildx build -f docker/tor/Dockerfile \
+          #   --push \
+          #   --tag ${{secrets.DOCKER_ORG}}/tor:latest \
+          #   --tag ${{secrets.DOCKER_ORG}}/tor:${{env.tag}} \
+          #   --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v2
         with:
+          readme-filepath: ./docs/console.md
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ secrets.DOCKER_ORG }}/console

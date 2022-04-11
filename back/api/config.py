@@ -53,7 +53,6 @@ SERVICE_URL = os.getenv('FLASK_SERVICE_URL', None)
 
 LOG_LEVEL = os.getenv('FLASK_LOG_LEVEL', 'ERROR')
 
-
 SHANTY_BASE_URL = os.getenv(
     'FLASK_SHANTY_BASE_URL', 'http://localhost:8000/')
 
