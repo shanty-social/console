@@ -38,7 +38,9 @@ def _wrap_generator(task):
 
 # NOTE: timeout kwarg is consumed by this decorator.
 @threading_timeoutable()
-def _task_runner(task, task_kwarg=None):
+def _task_runner(task, task_kwarg=None, retain_task=True):
+    LOGGER.debug(
+        'Task kwargs: task_kwarg=%s, retain_task=%s', task_kwarg, retain_task)
     if inspect.isgeneratorfunction(task.function):
         runnable = _wrap_generator(task)
     else:
@@ -66,17 +68,22 @@ def _task_runner(task, task_kwarg=None):
         LOGGER.debug('Task[%s] completed...', task.id)
 
     # Update task information
-    LOGGER.debug('Task[%s] saving...', task.id)
-    task.result = result
-    task.completed = datetime.now()
-    task.save()
+    if not retain_task:
+        LOGGER.debug('Task[%s] deleting...', task.id)
+        task.delete_instance()
+    else:
+        LOGGER.debug('Task[%s] saving...', task.id)
+        task.result = result
+        task.completed = datetime.now()
+        task.save()
 
 
 def cron(schedule, *args, **kwargs):
     "Decorate a function to define a run schedule and arguments."
     def inner(f):
         LOGGER.info('Scheduling task %s at %s', f.__name__, schedule)
-        CRONTAB.append((schedule, f, args, kwargs))
+        kwargs['args'] = args
+        CRONTAB.append((schedule, f, kwargs))
         return f
     return inner
 
@@ -102,22 +109,23 @@ class RepeatTimer(threading.Timer):
 def start_background_tasks(interval=60.0):
     def _scheduler():
         LOGGER.debug('Scheduler checking %i tasks', len(CRONTAB))
-        for schedule, f, args, kwargs in CRONTAB:
+        for schedule, f, kwargs in CRONTAB:
             if pycron.is_now(schedule):
                 LOGGER.debug(
                     'Schedule %s is now, executing task %s', schedule, f)
-                defer(f, args, kwargs)
+                defer(f, **kwargs)
 
     LOGGER.info('Starting task scheduler for %i tasks', len(CRONTAB))
     RepeatTimer(interval, _scheduler, daemon=True).start()
 
 
 def defer(f, args=(), kwargs={}, timeout=None,
-          task_kwarg=None, pass_log_kwarg=None):
+          task_kwarg=None, pass_log_kwarg=None, retain_task=True):
     "Defer a function to run as a task."
     runner_kwargs = {
         'timeout': timeout,
-        'task_kwarg': 'task' if task_kwarg is True else task_kwarg
+        'task_kwarg': 'task' if task_kwarg is True else task_kwarg,
+        'retain_task': retain_task,
     }
     task = Task(function=f, args=args, kwargs=kwargs)
     task.save(force_insert=True)  # Save to get an id assigned.

@@ -25,7 +25,7 @@ LOGGER.addHandler(logging.NullHandler())
 EndpointForm = model_form(Endpoint, base_class=Form)
 
 
-@cron('* * * * *')
+@cron('* * * * *', retain_task=False)
 def check_endpoint_ssh():
     "SSH tunnel status check"
     endpoints = list(Endpoint.select())

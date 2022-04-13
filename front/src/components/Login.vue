@@ -71,7 +71,7 @@ export default {
         ]
       },
       error: null,
-      next: next || '/settings'
+      next: next || '/'
     }
   },
 

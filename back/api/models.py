@@ -147,7 +147,10 @@ class Task(SignalMixin, db.Model):
         t = find_thread(str(self.id))
         if t is None:
             return
-        async_raise(t.ident, CancelledError)
+        try:
+            async_raise(t.ident, CancelledError)
+        except ValueError:
+            return
         t.join(timeout=timeout)
 
     def delete_instance(self, *args, **kwargs):
@@ -241,15 +244,23 @@ class Message(SignalMixin, db.Model):
 
 
 @post_save(sender=Task)
-def on_task_event(sender, instance, created):
+def on_task_save(sender, instance, created):
     "Publish task events to socket.io."
     from api.views.tasks import task_preparer
     socketio.emit('models.task.post_save',
                   task_preparer.prepare(instance.refresh()), broadcast=True)
 
 
+@post_delete(sender=Task)
+def on_task_delete(sender, instance):
+    "Publish task events to socket.io."
+    from api.views.tasks import task_preparer
+    socketio.emit('models.task.post_delete',
+                  task_preparer.prepare(instance), broadcast=True)
+
+
 @post_save(sender=Message)
-def on_message_event(sender, instance, created):
+def on_message_save(sender, instance, created):
     "Publish task events to socket.io."
     from api.views.messages import message_preparer
     socketio.emit('models.message.post_save',

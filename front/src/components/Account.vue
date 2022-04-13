@@ -45,7 +45,7 @@ export default {
       this.$store
         .dispatch('auth/logout')
         .then(() => {
-          this.$router.push('/login')
+          this.$router.push('/authentication')
         })
         .catch(console.error)
     }

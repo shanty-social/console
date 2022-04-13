@@ -19,7 +19,7 @@ from api import config
 from api.models import OAuthClient
 
 
-@cron('*/5 * * * *')
+@cron('*/5 * * * *', retain_task=False)
 def refresh_tokens():
     "Refresh oauth tokens."
 
