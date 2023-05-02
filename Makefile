@@ -1,6 +1,6 @@
 DOCKER=docker
 DOCKER = docker
-DOCKER_COMPOSE = docker-compose -p console
+DOCKER_COMPOSE = docker compose -p console
 
 
 .PHONY: shared

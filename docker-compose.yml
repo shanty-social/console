@@ -60,9 +60,10 @@ services:
     networks:
       - private
     volumes:
-      - ./front:/front:ro
+      - ./front/src:/front/src:ro
     ports:
       - 8080:8080
+      - 8088:8888
     environment:
       - FLASK_HOST=console-back
       - FLASK_PORT=8008

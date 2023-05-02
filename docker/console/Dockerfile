@@ -1,4 +1,4 @@
-FROM ${ARCH}alpine:3.15 AS python
+FROM ${ARCH}alpine:3.17 AS python
 
 ARG DOCKER_GID=130
 ARG CERT_DIR=/var/lib/certs
@@ -55,7 +55,7 @@ ADD ./front /front
 # Install Node
 WORKDIR /front
 RUN apk add --no-cache nodejs npm && \
-    npm i
+    npm i --include=dev
 
 ENTRYPOINT [ "npm", "run", "serve" ]
 

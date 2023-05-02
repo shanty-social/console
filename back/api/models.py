@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse, urlunparse, ParseResult
 from uuid import uuid4
 
 from datetime import datetime
@@ -7,7 +8,7 @@ from pkg_resources import parse_version
 from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    TextField, BooleanField, UUIDField, IntegerField,
+    TextField, BooleanField, UUIDField, SmallIntegerField,
 )
 from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
@@ -67,6 +68,21 @@ class VersionField(CharField):
 
     def db_value(self, val):
         return str(val)
+
+
+class URLField(CharField):
+    "Custom field to store url."
+    def python_value(self, val):
+        return urlparse(val)
+
+    def db_value(self, val):
+        if isinstance(val, str):
+            urlparse(val)
+            return val
+        elif isinstance(val, ParseResult):
+            return urlunparse(val)
+        else:
+            return str(val)
 
 
 class SignalMixin:
@@ -216,19 +232,22 @@ class OAuthClient(db.Model):
     user = JSONField(null=False)
 
 
-class Endpoint(db.Model):
-    "Endpoint model representing traffic routing."
-    class Meta:
-        indexes = [
-            (('path', 'domain_name'), True),
-        ]
+class Backend(SignalMixin, db.Model):
+    "Backend which serves up a web application."
+    name = CharField(null=False)
+    url = URLField(null=False, unique=True)
+    host = CharField(null=False)
 
-    name = CharField(null=False, unique=True)
-    addr = CharField(null=False)
-    host_name = CharField(null=False)
-    port = IntegerField(null=True)
-    path = CharField(null=False, default='/')
-    domain_name = CharField(null=False)
+
+class Frontend(SignalMixin, db.Model):
+    "Frontend that accepts traffic from users."
+    type = SmallIntegerField(choices=[
+        (1, 'direct'),
+        (2, 'tunnel'),
+        (3, 'onion'),
+    ])
+    backend = ForeignKeyField(Backend, backref='frontends')
+    url = URLField(null=False, unique=True)
 
 
 class Message(SignalMixin, db.Model):
@@ -248,7 +267,7 @@ def on_task_save(sender, instance, created):
     "Publish task events to socket.io."
     from api.views.tasks import task_preparer
     socketio.emit('models.task.post_save',
-                  task_preparer.prepare(instance.refresh()), broadcast=True)
+                  task_preparer.prepare(instance.refresh()))
 
 
 @post_delete(sender=Task)
@@ -256,7 +275,7 @@ def on_task_delete(sender, instance):
     "Publish task events to socket.io."
     from api.views.tasks import task_preparer
     socketio.emit('models.task.post_delete',
-                  task_preparer.prepare(instance), broadcast=True)
+                  task_preparer.prepare(instance))
 
 
 @post_save(sender=Message)
@@ -264,4 +283,36 @@ def on_message_save(sender, instance, created):
     "Publish task events to socket.io."
     from api.views.messages import message_preparer
     socketio.emit('models.message.post_save',
-                  message_preparer.prepare(instance), broadcast=True)
+                  message_preparer.prepare(instance))
+
+
+@post_save(sender=Backend)
+def on_backend_save(sender, instance, created):
+    "Publish backend events to socket.io."
+    from api.views.backends import backend_preparer
+    socketio.emit('models.backend.post_save',
+                  backend_preparer.prepare(instance))
+
+
+@post_delete(sender=Backend)
+def on_backend_delete(sender, instance):
+    "Publish backend events to socket.io."
+    from api.views.backends import backend_preparer
+    socketio.emit('models.backend.post_delete',
+                  backend_preparer.prepare(instance))
+
+
+@post_save(sender=Frontend)
+def on_frontend_save(sender, instance, created):
+    "Publish backend events to socket.io."
+    from api.views.backends import backend_preparer
+    socketio.emit('models.backend.post_save',
+                  backend_preparer.prepare(instance))
+
+
+@post_delete(sender=Frontend)
+def on_frontend_delete(sender, instance):
+    "Publish frontend events to socket.io."
+    from api.views.frontends import frontend_preparer
+    socketio.emit('models.frontend.post_delete',
+                  frontend_preparer.prepare(instance))
