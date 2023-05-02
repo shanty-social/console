@@ -22,7 +22,7 @@ backend_preparer = FieldsPreparer(fields={
     'id': 'id',
     'name': 'name',
     'url': 'url',
-    'host': 'host',
+    'container_id': 'container_id',
 })
 
 

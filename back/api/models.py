@@ -236,7 +236,24 @@ class Backend(SignalMixin, db.Model):
     "Backend which serves up a web application."
     name = CharField(null=False)
     url = URLField(null=False, unique=True)
-    host = CharField(null=False)
+    container_id = CharField(null=False)
+    created = DateTimeField(default=datetime.now)
+
+
+class CryptoKey(SignalMixin, db.Model):
+    "SSH and SSL keys."
+    type = SmallIntegerField(choices=[
+        (1, 'ssh'),
+        (2, 'ssl'),
+    ])
+    provision = SmallIntegerField(choices=[
+        (1, 'internal'),
+        (2, 'letsencrypt'),
+        (3, 'manual'),
+    ])
+    private = CharField()
+    public = CharField()
+    created = DateTimeField(default=datetime.now)
 
 
 class Frontend(SignalMixin, db.Model):
@@ -245,13 +262,30 @@ class Frontend(SignalMixin, db.Model):
         (1, 'direct'),
         (2, 'tunnel'),
         (3, 'onion'),
+        (4, 'local'),
     ])
     backend = ForeignKeyField(Backend, backref='frontends')
+    key = ForeignKeyField(CryptoKey, backref='frontends')
     url = URLField(null=False, unique=True)
+    created = DateTimeField(default=datetime.now)
+
+
+class Agent(db.Model):
+    "Remote agents."
+    name = CharField(null=False)
+    token = CharField(null=False, unique=True)
+    url = URLField(null=False, unique=True)
+    container_id = CharField(null=False)
+    created = DateTimeField(default=datetime.now)
 
 
 class Message(SignalMixin, db.Model):
-    "Message to user"
+    "Message to user."
+    type = SmallIntegerField(choices=[
+        (1, 'info'),
+        (2, 'warning'),
+        (3, 'error'),
+    ])
     subject = CharField(null=False)
     body = TextField(null=False)
     read = BooleanField(default=False)
@@ -304,7 +338,7 @@ def on_backend_delete(sender, instance):
 
 @post_save(sender=Frontend)
 def on_frontend_save(sender, instance, created):
-    "Publish backend events to socket.io."
+    "Publish frontend events to socket.io."
     from api.views.backends import backend_preparer
     socketio.emit('models.backend.post_save',
                   backend_preparer.prepare(instance))
@@ -316,3 +350,19 @@ def on_frontend_delete(sender, instance):
     from api.views.frontends import frontend_preparer
     socketio.emit('models.frontend.post_delete',
                   frontend_preparer.prepare(instance))
+
+
+@post_save(sender=CryptoKey)
+def on_cryptokey_save(sender, instance, created):
+    "Publish cryptokey events to socket.io."
+    from api.views.cryptokeys import cryptokey_preparer
+    socketio.emit('models.cryptokey.post_save',
+                  cryptokey_preparer.prepare(instance))
+
+
+@post_delete(sender=CryptoKey)
+def on_cryptokey_delete(sender, instance):
+    "Publish cryptokey events to socket.io."
+    from api.views.cryptokeys import cryptokey_preparer
+    socketio.emit('models.cryptokey.post_delete',
+                  cryptokey_preparer.prepare(instance))
