@@ -95,7 +95,7 @@ class SettingResource(BaseResource):
     def update(self, pk):
         "Update single setting."
         setting = get_object_or_404(Setting, Setting.name == pk)
-        form = SettingForm(self.data)
+        form = SettingForm(self.data, obj=setting)
         if not form.validate():
             abort(400, form.errors)
         form.populate_obj(setting)

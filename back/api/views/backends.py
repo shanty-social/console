@@ -68,7 +68,7 @@ class BackendResource(BaseResource):
     def update(self, pk):
         "Update single backend."
         backend = get_object_or_404(Backend, Backend.id == pk)
-        form = BackendForm(self.data)
+        form = BackendForm(self.data, obj=backend)
         if not form.validate():
             abort(400, form.errors)
         form.populate_obj(backend)

@@ -1,8 +1,8 @@
 from functools import wraps
 
-from flask import g, session, abort
+from flask import g, session, abort, request
 
-from api.models import User
+from api.models import User, Agent
 
 
 def get_logged_in_user():
@@ -49,6 +49,20 @@ def log_out_user():
 def session_auth():
     "Check for user in session."
     return get_logged_in_user() is not None
+
+
+def agent_auth():
+    auth = request.headers.get('Authorization')
+    if auth is None or not auth.startswith('Bearer '):
+        return False
+    token = auth[7:]
+    try:
+        Agent.get(Agent.token == token, Agent.activated == True)  # noqa: E712
+
+    except Agent.DoesNotExist:
+        return False
+
+    return True
 
 
 def requires_auth(auth_methods=[session_auth]):

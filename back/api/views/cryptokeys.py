@@ -22,6 +22,7 @@ cryptokey_preparer = FieldsPreparer(fields={
     'id': 'id',
     'type': 'type',
     'provision': 'provision',
+    'agent': 'agent',
     'private': 'private',
     'public': 'public',
     'created': 'created',
@@ -36,6 +37,7 @@ class CryptoKeyResource(BaseResource):
         "List crypto keys."
         type = request.args.get('type')
         provision = request.args.get('provision')
+        agent_id = request.args.get('agent_id')
         private = request.args.get('private')
         public = request.args.get('public')
         cryptokeys = CryptoKey.select()
@@ -43,6 +45,8 @@ class CryptoKeyResource(BaseResource):
             cryptokeys = cryptokeys.where(CryptoKey.type == type)
         if provision:
             cryptokeys = cryptokeys.where(CryptoKey.provision == provision)
+        if agent_id:
+            cryptokeys = cryptokeys.where(CryptoKey.agent_id == agent_id)
         if private:
             cryptokeys = cryptokeys.where(CryptoKey.private == private)
         if public:
@@ -62,6 +66,7 @@ class CryptoKeyResource(BaseResource):
             name=form.name.data, defaults={
                 'type': form.type.data,
                 'provision': form.provision.data,
+                'agent_id': form.agent_id.data,
                 'private': form.private.data,
                 'public': form.public.data,
             }
@@ -74,7 +79,7 @@ class CryptoKeyResource(BaseResource):
     def update(self, pk):
         "Update single cryptokey."
         cryptokey = get_object_or_404(CryptoKey, CryptoKey.id == pk)
-        form = CryptoKeyForm(self.data)
+        form = CryptoKeyForm(self.data, obj=cryptokey)
         if not form.validate():
             abort(400, form.errors)
         form.populate_obj(cryptokey)

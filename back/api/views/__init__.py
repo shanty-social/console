@@ -12,7 +12,7 @@ from werkzeug.routing import RoutingException
 
 from wtforms import Form as _Form
 
-from api.auth import session_auth
+from api.auth import session_auth, agent_auth
 from api.config import EXTERNAL_HOST
 
 
@@ -155,6 +155,7 @@ class BaseResource(FlaskResource):
     # Auth methods can be defined on per-view basis, these are defaults.
     auth_methods = [
         session_auth,
+        agent_auth,
     ]
     extra_actions = {}
     extra_details = {}

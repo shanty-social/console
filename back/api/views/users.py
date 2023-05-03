@@ -45,6 +45,7 @@ class UserResource(BaseResource):
         if self.endpoint in ('login', 'whoami', 'activated'):
             return True
         elif self.endpoint == 'list' and request.method == 'POST':
+            # NOTE: should this be not self.activated()?
             return self.activated() or super().is_authenticated()
         return super().is_authenticated()
 
@@ -69,6 +70,18 @@ class UserResource(BaseResource):
         user, created = User.get_or_create(
             username=form.username.data, defaults={'name': form.name.data})
         user.set_password(form.password.data)
+        user.save()
+        return user
+
+    def update(self, pk):
+        user = get_object_or_404(User, User.id == pk)
+        form = UserForm(self.data, obj=user)
+        if not form.validate():
+            abort(400, form.errors)
+        if form.name.data:
+            user.name = form.name.data
+        if form.password.data:
+            user.set_password(form.password.data)
         user.save()
         return user
 

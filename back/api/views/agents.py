@@ -20,10 +20,11 @@ AgentForm = model_form(Agent, base_class=Form)
 
 agent_preparer = FieldsPreparer(fields={
     'id': 'id',
+    'uuid': 'uuid',
     'name': 'name',
+    'description': 'description',
     'token': 'token',
-    'url': 'url',
-    'container_id': 'container_id',
+    'activated': 'activated',
     'created': 'created',
 })
 
@@ -32,21 +33,26 @@ class AgentResource(BaseResource):
     "Manage Agents."
     preparer = agent_preparer
 
+    def is_authenticated(self):
+        if self.endpoint == 'list' and request.method == 'POST':
+            return True
+        return super().is_authenticated()
+
     def list(self):
         "List agents."
+        uuid = request.args.get('uuid')
         name = request.args.get('name')
         token = request.args.get('token')
-        url = request.args.get('url')
-        container_id = request.args.get('container_id')
+        activated = request.args.get('activated')
         agents = Agent.select()
+        if uuid:
+            uuid = agents.where(Agent.uuid == uuid)
         if name:
             agents = agents.where(Agent.name == name)
         if token:
             agents = agents.where(Agent.token == token)
-        if url:
-            agents = agents.where(Agent.url == url)
-        if container_id:
-            agents = agents.where(Agent.container_id == container_id)
+        if activated:
+            agents = agents.where(Agent.activated == activated)
         return agents
 
     def detail(self, pk):
@@ -59,11 +65,11 @@ class AgentResource(BaseResource):
         if not form.validate():
             abort(400, form.errors)
         agent, created = Agent.get_or_create(
-            name=form.name.data, defaults={
+            uuid=form.uuid.data, defaults={
                 'name': form.name.data,
+                'description': form.description.data,
                 'token': form.token.data,
-                'url': form.url.data,
-                'container_id': form.container_id.data,
+                'activated': False,
             }
         )
         if not created:
@@ -74,7 +80,7 @@ class AgentResource(BaseResource):
     def update(self, pk):
         "Update single agent."
         agent = get_object_or_404(Agent, Agent.id == pk)
-        form = AgentForm(self.data)
+        form = AgentForm(self.data, obj=agent)
         if not form.validate():
             abort(400, form.errors)
         form.populate_obj(agent)

@@ -240,6 +240,16 @@ class Backend(SignalMixin, db.Model):
     created = DateTimeField(default=datetime.now)
 
 
+class Agent(db.Model):
+    "Remote agents."
+    uuid = UUIDField(null=False)
+    name = CharField(null=False)
+    description = CharField(null=True)
+    token = CharField(null=False, unique=True)
+    activated = BooleanField(default=False)
+    created = DateTimeField(default=datetime.now)
+
+
 class CryptoKey(SignalMixin, db.Model):
     "SSH and SSL keys."
     type = SmallIntegerField(choices=[
@@ -251,7 +261,8 @@ class CryptoKey(SignalMixin, db.Model):
         (2, 'letsencrypt'),
         (3, 'manual'),
     ])
-    private = CharField()
+    agent = ForeignKeyField(Agent, null=True, backref='keys')
+    private = CharField(null=True)
     public = CharField()
     created = DateTimeField(default=datetime.now)
 
@@ -265,17 +276,10 @@ class Frontend(SignalMixin, db.Model):
         (4, 'local'),
     ])
     backend = ForeignKeyField(Backend, backref='frontends')
-    key = ForeignKeyField(CryptoKey, backref='frontends')
+    ssh_key = ForeignKeyField(CryptoKey)
+    host_key = ForeignKeyField(CryptoKey)
+    ssl_key = ForeignKeyField(CryptoKey, backref='frontends')
     url = URLField(null=False, unique=True)
-    created = DateTimeField(default=datetime.now)
-
-
-class Agent(db.Model):
-    "Remote agents."
-    name = CharField(null=False)
-    token = CharField(null=False, unique=True)
-    url = URLField(null=False, unique=True)
-    container_id = CharField(null=False)
     created = DateTimeField(default=datetime.now)
 
 
