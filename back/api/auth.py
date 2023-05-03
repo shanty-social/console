@@ -57,11 +57,13 @@ def agent_auth():
         return False
     token = auth[7:]
     try:
-        Agent.get(Agent.token == token, Agent.activated == True)  # noqa: E712
+        agent = Agent.get(
+            Agent.token == token, Agent.activated == True)  # noqa: E712
 
     except Agent.DoesNotExist:
         return False
 
+    g.user = agent.user
     return True
 
 

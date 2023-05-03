@@ -112,7 +112,7 @@ class HostResource(BaseResource):
         'aliases': 'aliases',
     })
     extra_actions = {
-        'port_scan': ['POST']
+        'port_scan': ['POST'],
     }
 
     def list(self):

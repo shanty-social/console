@@ -15,7 +15,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
-AgentForm = model_form(Agent, base_class=Form)
+AgentForm = model_form(Agent, base_class=Form, exclude=['remote_addr', 'user'])
 
 
 agent_preparer = FieldsPreparer(fields={
@@ -69,6 +69,7 @@ class AgentResource(BaseResource):
                 'name': form.name.data,
                 'description': form.description.data,
                 'token': form.token.data,
+                'remote_addr': request.remote_addr,
                 'activated': False,
             }
         )

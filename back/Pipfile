@@ -19,6 +19,8 @@ authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0
 wtf-peewee = "*"
 uwsgi-chunked = "==0.1.8"
 gevent = "*"
+cryptography = "*"
+pytest-mock = "*"
 
 [dev-packages]
 flake8 = "*"

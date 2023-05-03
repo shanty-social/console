@@ -8,7 +8,7 @@ from pkg_resources import parse_version
 from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    TextField, BooleanField, UUIDField, SmallIntegerField,
+    TextField, BooleanField, UUIDField, SmallIntegerField, IPField,
 )
 from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
@@ -213,7 +213,7 @@ class TaskLog(db.Model):
 class User(db.Model):
     "User model for local authentication."
     username = CharField(null=False, unique=True)
-    password = CharField(null=False)
+    password = CharField(null=True)
     name = CharField(null=True)
     active = BooleanField(default=True)
     admin = BooleanField(default=False)
@@ -242,43 +242,48 @@ class Backend(SignalMixin, db.Model):
 
 class Agent(db.Model):
     "Remote agents."
-    uuid = UUIDField(null=False)
+    uuid = UUIDField(null=False, unique=True)
     name = CharField(null=False)
+    user = ForeignKeyField(User, backref='agents')
     description = CharField(null=True)
+    remote_addr = IPField(null=False)
     token = CharField(null=False, unique=True)
     activated = BooleanField(default=False)
     created = DateTimeField(default=datetime.now)
 
+    def save(self, *args, **kwargs):
+        try:
+            self.user
+        except User.DoesNotExist:
+            self.user = User.create(name='Agent', username=self.uuid)
+        return super().save(*args, **kwargs)
+
 
 class CryptoKey(SignalMixin, db.Model):
     "SSH and SSL keys."
-    type = SmallIntegerField(choices=[
-        (1, 'ssh'),
-        (2, 'ssl'),
-    ])
-    provision = SmallIntegerField(choices=[
-        (1, 'internal'),
-        (2, 'letsencrypt'),
-        (3, 'manual'),
+    type = CharField(null=False)
+    name = CharField(null=False, unique=True)
+    provision = CharField(choices=[
+        ('internal', 'internal'),
+        ('letsencrypt', 'letsencrypt'),
+        ('manual', 'manual'),
     ])
     agent = ForeignKeyField(Agent, null=True, backref='keys')
-    private = CharField(null=True)
-    public = CharField()
+    private = TextField(null=True)
+    public = TextField()
     created = DateTimeField(default=datetime.now)
 
 
 class Frontend(SignalMixin, db.Model):
     "Frontend that accepts traffic from users."
-    type = SmallIntegerField(choices=[
-        (1, 'direct'),
-        (2, 'tunnel'),
-        (3, 'onion'),
-        (4, 'local'),
+    type = CharField(choices=[
+        ('direct', 'direct'),
+        ('tunnel', 'tunnel'),
+        ('onion', 'onion'),
+        ('local', 'local'),
     ])
     backend = ForeignKeyField(Backend, backref='frontends')
-    ssh_key = ForeignKeyField(CryptoKey)
-    host_key = ForeignKeyField(CryptoKey)
-    ssl_key = ForeignKeyField(CryptoKey, backref='frontends')
+    ssl_key = ForeignKeyField(CryptoKey, null=True, backref='frontends')
     url = URLField(null=False, unique=True)
     created = DateTimeField(default=datetime.now)
 
@@ -343,9 +348,9 @@ def on_backend_delete(sender, instance):
 @post_save(sender=Frontend)
 def on_frontend_save(sender, instance, created):
     "Publish frontend events to socket.io."
-    from api.views.backends import backend_preparer
-    socketio.emit('models.backend.post_save',
-                  backend_preparer.prepare(instance))
+    from api.views.frontends import frontend_preparer
+    socketio.emit('models.frontend.post_save',
+                  frontend_preparer.prepare(instance))
 
 
 @post_delete(sender=Frontend)

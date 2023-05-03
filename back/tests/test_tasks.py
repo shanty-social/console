@@ -81,4 +81,4 @@ def test_task_log():
 def test_task_exception(authenticated):
     t = Task.create(function=test_task_exception, result=Exception('BOOM'))
     r = authenticated.get('/api/tasks/')
-    assert r.status_code == 200, 'Invalid status code'
+    assert r.status_code == 200, f'Invalid status {r.status_code}'

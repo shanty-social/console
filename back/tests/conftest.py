@@ -65,11 +65,11 @@ def authenticated():
             session['user_pk'] = 1
         with app.app_context():
             g.user = User.select().where(User.id==1).get()
-        try:
-            yield client
+            try:
+                yield client
 
-        finally:
-            g.user = None
+            finally:
+                g.user = None
 
 
 @pytest.fixture
@@ -81,6 +81,7 @@ def agent():
                 name='Test Agent',
                 token='abc123',
                 activated=True,
+                remote_addr='127.0.0.1',
             )
 
         try:
