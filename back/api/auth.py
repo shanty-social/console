@@ -18,35 +18,56 @@ def get_logged_in_user():
 
     if session.get('authenticated'):
         try:
+            user_pk = int(session['user_pk'])
+
+        except KeyError:
+            LOGGER.info('Session user_pk missing')
+            return
+        except ValueError:
+            LOGGER.info('Session user_pk not int %s', session['user_pk'])
+            return
+
+        try:
             user = User \
                 .select() \
                 .where(
                     User.is_active == True,  # noqa: E712
-                    User.id == session.get('user_pk')
+                    User.id == user_pk
                 ) \
                 .get()
+
             g.user = user
             return user
 
         except User.DoesNotExist:
+            LOGGER.warning('Session user_pk %i invalid', user_pk)
             pass
+
+
+def _log_in_user(username, password):
+    try:
+        user = User.get(
+            User.username == username,  # noqa: E712
+            User.is_active == True)     # noqa: E712
+
+    except User.DoesNotExist:
+        LOGGER.warning('Login failed, user not found %s', username)
+        abort(401)
+
+    if not user.check_password(password):
+        LOGGER.warning('Login failed, invalid password for %s', username)
+        abort(401)
+
+    return user
 
 
 def log_in_user(username, password):
     "Logs in user using session."
-    # NOTE: don't allow agents to login via UI.
-    try:
-        user = User.get(
-            User.username == username,  # noqa: E712
-            User.is_active == True,     # noqa: E712
-            User.is_agent == False)     # noqa: E712
-
-    except User.DoesNotExist:
+    user = _log_in_user(username, password)
+    if user.is_agent:
+        # NOTE: Agents cannot log into UI.
+        LOGGER.warning('Attempted agent session login %s', username)
         abort(401)
-
-    if not user.check_password(password):
-        abort(401)
-
     session['authenticated'] = True
     session['user_pk'] = user._pk
     g.user = user
@@ -60,29 +81,28 @@ def log_out_user():
 
 def session_auth():
     "Session auth."
+    LOGGER.debug('Performing session auth')
     return get_logged_in_user() is not None
 
 
 def basic_auth():
     "Basic auth for agents."
     # NOTE: don't allow admins to login via Basic.
+    LOGGER.debug('Performing basic auth')
     auth = request.headers.get('Authorization')
     if not auth:
         return False
 
-    username, password = b64decode(auth).split(':')
-
     try:
-        user = User.get(
-            User.username == username,  # noqa: E712
-            User.is_agent == True,      # noqa: E712
-            User.is_admin == False,     # noqa: E712
-            User.is_active == True)     # noqa: E712
-
-    except User.DoesNotExist:
+        username, password = b64decode(auth).split(':')
+    except ValueError:
+        LOGGER.warning('Malformed auth header %s', auth)
         return False
 
-    if not user.check_password(password):
+    user = _log_in_user(username, password)
+    if user.is_admin:
+        # NOTE: admins cannot use basic auth.
+        LOGGER.warning('Attempted admin basic login %s', username)
         return False
 
     g.user = user
@@ -94,6 +114,7 @@ def check_auth(auth_methods=None):
     for auth_method in auth_methods:
         try:
             if auth_method():
+                LOGGER.debug('User authenticated via %s', auth_method.__name__)
                 return True
         except Exception:
             LOGGER.debug('Auth error', exc_info=True)
