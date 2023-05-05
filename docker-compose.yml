@@ -16,20 +16,14 @@ services:
       dockerfile: ./docker/console/Dockerfile
       target: python
       context: ./
-    networks:
-      - private
-      - shared
-    extra_hosts:
-      - www.shanty.local:192.168.100.200
-      - ssh.shanty.local:192.168.100.201
+    network_mode: host
     volumes:
       - ./back/api:/app/api:ro
       - ./docker/console/entrypoint.sh:/entrypoint.sh:ro
-      - ./docker/console/client.key:/var/lib/console/client.key:ro
       - /var/run/docker.sock:/var/run/sockets/docker.sock
-#      - /tmp/wpa_sock:/var/run/sockets
-      - /tmp/certs:/var/lib/certs/
       - db:/var/lib/console/
+    ports:
+      - 8008:8008
     environment:
       - FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
       - FLASK_NDS_SOCKET_PATH=/var/run/sockets/nds
@@ -41,13 +35,8 @@ services:
       - FLASK_DB_PATH=/var/lib/console/db.sqlite3
       - FLASK_UUID_PATH=/var/lib/console/console.uuid
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
-      - FLASK_SHANTY_OAUTH_CONFIG_URL=http://www.shanty.local:8000/api/oauth/config.json
-      - FLASK_SHANTY_BASE_URL=http://www.shanty.local:8000/
-      - CERT_DIR=/var/lib/certs
-      - SSH_HOST=ssh.shanty.local
-      - SSH_PORT=2222
-      - SSH_KEY_FILE=/var/lib/console/client.key
-      - SSH_HOST_KEYS_FILE=/var/lib/console/authorized_keys
+      - FLASK_SHANTY_OAUTH_CONFIG_URL=http://website-back:8000/api/oauth/config.json
+      - FLASK_SHANTY_BASE_URL=http://website-back:8000
 
   console-front:
     image: console/vue
@@ -57,15 +46,14 @@ services:
       context: ./
     depends_on:
       - console-back
-    networks:
-      - private
+    network_mode: host
     volumes:
       - ./front/src:/front/src:ro
     ports:
       - 8080:8080
       - 8088:8888
     environment:
-      - FLASK_HOST=console-back
+      - FLASK_HOST=localhost
       - FLASK_PORT=8008
       - VUE_HOST=0.0.0.0
       - VUE_PORT=8080

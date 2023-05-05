@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import Auth from './auth'
-import Endpoints from './endpoints'
+import Frontends from './frontends'
+import Backends from './backends'
 import Hosts from './hosts'
 import Socket from './socket'
 import Tasks from './tasks'
@@ -13,7 +14,8 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   modules: {
     auth: Auth,
-    endpoints: Endpoints,
+    frontends: Frontends,
+    backends: Backends,
     hosts: Hosts,
     socket: Socket,
     tasks: Tasks,

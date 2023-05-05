@@ -51,7 +51,7 @@ import EndpointHost from '@/components/endpoint/Host'
 import SharedDomain from '@/components/endpoint/SharedDomain.vue'
 
 export default {
-  name: 'Endpoint',
+  name: 'Frontends',
 
   components: {
     EndpointHost,
@@ -102,14 +102,14 @@ export default {
   },
 
   computed: {
-    ...mapGetters({ items: 'endpoints/data' })
+    ...mapGetters({ items: 'frontends/data' })
   },
 
   methods: {
     ...mapActions({
-      fetch: 'endpoints/fetch',
-      remove: 'endpoints/remove',
-      save: 'endpoints/save',
+      fetch: 'frontends/fetch',
+      remove: 'frontends/remove',
+      save: 'frontends/save',
     }),
 
     onSave () {

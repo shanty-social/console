@@ -2,7 +2,6 @@ from restless.preparers import FieldsPreparer
 from restless.resources import skip_prepare
 
 from flask import request
-from peewee import IntegrityError
 from flask_peewee.utils import get_object_or_404
 
 import wtforms
@@ -26,8 +25,9 @@ class LoginForm(Form):
 user_preparer = FieldsPreparer(fields={
     'username': 'username',
     'name': 'name',
-    'active': 'active',
-    'admin': 'admin',
+    'is_active': 'is_active',
+    'is_admin': 'is_admin',
+    'is_agent': 'is_agent',
 })
 
 
@@ -45,8 +45,8 @@ class UserResource(BaseResource):
         if self.endpoint in ('login', 'whoami', 'activated'):
             return True
         elif self.endpoint == 'list' and request.method == 'POST':
-            # NOTE: should this be not self.activated()?
-            return self.activated() or super().is_authenticated()
+            # NOTE: create()
+            return True
         return super().is_authenticated()
 
     def list(self):
@@ -59,17 +59,12 @@ class UserResource(BaseResource):
         form = UserForm(self.data)
         if not form.validate():
             abort(400, form.errors)
-        user = User(username=form.username.data, name=form.name.data)
-        user.set_password(form.password.data)
-        try:
-            user.save()
-
-        except IntegrityError:
-            user = User.get()
-
         user, created = User.get_or_create(
             username=form.username.data, defaults={'name': form.name.data})
         user.set_password(form.password.data)
+        # NOTE: Anonymously created users are initially inactive.
+        user.is_active = form.is_active.data if super().is_authenticated() \
+                                             else False  # noqa: E127
         user.save()
         return user
 

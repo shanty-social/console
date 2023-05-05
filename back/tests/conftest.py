@@ -1,6 +1,7 @@
 import os
 import tempfile
 import atexit
+from base64 import b64encode
 
 import pytest
 
@@ -19,7 +20,7 @@ config.TESTING = True
 
 from api import urls
 from api.app import db, app
-from api.models import create_tables, drop_tables, User, Agent
+from api.models import create_tables, drop_tables, User
 
 
 class ConsoleClient(FlaskClient):
@@ -58,32 +59,24 @@ def client():
 
 
 @pytest.fixture
-def authenticated():
+def session_auth():
     with app.test_client() as client:
-        with client.session_transaction() as session:
-            session['authenticated'] = True
-            session['user_pk'] = 1
-        with app.app_context():
-            g.user = User.select().where(User.id==1).get()
-            try:
-                yield client
+        client.post('/api/users/login/', json={
+            'username': 'testuser',
+            'password': 'password',
+        })
+        try:
+            yield client
 
-            finally:
-                g.user = None
+        finally:
+            client.post('/api/users/logout/')
 
 
 @pytest.fixture
-def agent():
-    with app.test_client(global_headers={'Authorization': 'Bearer abc123'}) as client:
-        with app.app_context():
-            a = Agent.create(
-                uuid='22a92175-d3aa-4d11-9a75-f19de56ef030',
-                name='Test Agent',
-                token='abc123',
-                activated=True,
-                remote_addr='127.0.0.1',
-            )
-
+def basic_auth():
+    with app.test_client(global_headers={
+        'Authorization': b64encode('testuser:password'),
+    }) as client:
         try:
             yield client
 

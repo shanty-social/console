@@ -77,14 +77,14 @@ export default {
 
   mounted () {
     this.fetch()
-    this.fetchEndpoints()
+    this.fetchFrontends()
     this.fetchProviders()
   },
 
   computed: {
     ...mapGetters({
       oauth: 'oauth/data',
-      endpoints: 'endpoints/data',
+      frontends: 'frontends/data',
     }),
 
     items () {
@@ -99,7 +99,7 @@ export default {
         if (this.oauth && this.oauth.findIndex((o) => o.name === o.name) !== -1) {
           provider.registered = true
         }
-        provider.endpoints = this.endpoints
+        provider.frontends = this.frontends
         items.push(provider)
       })
 
@@ -110,7 +110,7 @@ export default {
   methods: {
     ...mapActions({
       fetch: 'oauth/fetch',
-      fetchEndpoints: 'endpoints/fetch',
+      fetchFrontends: 'frontends/fetch',
     }),
 
     fetchProviders () {

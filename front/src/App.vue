@@ -16,6 +16,20 @@
       </div>
 
       <v-spacer></v-spacer>
+  <div class="mr-2">
+        <v-btn
+          dark
+          v-bind="attrs"
+          v-on="on"
+        >
+          <router-link
+            to="/backends"
+          >
+            <v-icon
+            >mdi-page-layout-header</v-icon>
+          </router-link>
+        </v-btn>
+    </div>
       <Messages/>
       <Tasks/>
       <Account/>

@@ -1,9 +1,11 @@
 import ssl
 import logging
+import socket
+from http import HTTPStatus
 
 import docker
-
-from gevent import socket
+import requests
+from requests.exceptions import Timeout, ConnectionError
 
 from flask import request
 
@@ -21,36 +23,88 @@ CONTEXT = ssl.create_default_context()
 CONTEXT.check_hostname = False
 CONTEXT.verify_mode = ssl.CERT_NONE
 
+LABEL_NAME_PORT_VARNAME = 'social.homefree.console.port.varname'
+LABEL_NAME_PORT_DEFAULT = 'social.homefree.console.port.default'
 
-def fix_port(port):
-    return int(port.split('/')[0])
+
+def _get_label_int(d, key):
+    try:
+        return int(d[key])
+
+    except KeyError:
+        LOGGER.debug('Label %s not set', key)
+    except ValueError:
+        LOGGER.debug('Label %s invalid', key)
+
+    return None
 
 
-def _container_details(container):
-    "Get details of container."
-    NetworkSettings = container.attrs['NetworkSettings']
+def _get_env_int(d, key):
+    start = f'{key}='
+    for var in d:
+        if var.startswith(start):
+            return var[len(start):]
+    LOGGER.debug('Environment varible %s not set', key)
+    return None
+
+
+def _container_ports(container):
+    ports = set()
     Config = container.attrs['Config']
-    aliases, addresses, ports = set(), set(), set()
+    for port in Config.get('ExposedPorts', {}).keys():
+        port, type = port.split('/')
+        if type == 'tcp':
+            ports.add(int(port))
+    # Read port information from labels.
+    label_port = None
+    try:
+        label_port = _get_env_int(
+            Config['Env'],
+            Config['Labels'][LABEL_NAME_PORT_VARNAME],
+        )
+    except KeyError:
+        LOGGER.debug('Label %s not set', LABEL_NAME_PORT_VARNAME)
+    if label_port is None:
+        label_port = _get_label_int(
+            Config['Labels'], LABEL_NAME_PORT_DEFAULT)
+    if label_port is not None:
+        ports.add(port)
+    return list(ports), label_port
+
+
+def _container_addresses(container):
+    aliases, addresses = set(), set()
+    Config = container.attrs['Config']
+    NetworkSettings = container.attrs['NetworkSettings']
     for network in NetworkSettings['Networks'].values():
         if network.get('Aliases'):
             aliases.update(network['Aliases'])
         if network.get('IPAddress'):
             addresses.add(network['IPAddress'])
-    for port in Config.get('ExposedPorts', {}).keys():
-        port, type = port.split('/')
-        if type == 'tcp':
-            ports.add(int(port))
-    aliases.remove(Config['Hostname'])
+    aliases.add(Config['Hostname'])
+    return list(aliases), list(addresses)
+
+
+def _container_details(container):
+    "Get details of container."
+    aliases, addresses = _container_addresses(container)
+    ports, default_port = _container_ports(container)
+    Config = container.attrs['Config']
+    NetworkSettings = container.attrs['NetworkSettings']
+
     return {
+        'id': container.id,
         'name': container.attrs['Name'],
         'created': container.attrs['Created'],
         'hostname': Config['Hostname'],
-        'service': Config['Labels'].get('com.docker.compose.service'),
+        'labels': Config['Labels'],
         'image': Config['Image'],
-        'mode': Config.get('HostConfig', {}).get('NetworkMode'),
-        'aliases': list(aliases),
-        'addresses': list(addresses),
-        'ports': list(ports),
+        'network_mode': Config.get('HostConfig', {}).get('NetworkMode'),
+        'networks': list(NetworkSettings['Networks'].keys()),
+        'aliases': aliases,
+        'addresses': addresses,
+        'ports': ports,
+        'default_port': default_port,
     }
 
 
@@ -101,18 +155,22 @@ def _sniff(s, host, port):
 class HostResource(BaseResource):
     "Manage docker hosts."
     preparer = FieldsPreparer(fields={
+        'id': 'id',
         'name': 'name',
         'created': 'created',
         'hostname': 'hostname',
-        'service': 'service',
+        'labels': 'labels',
         'image': 'image',
         'ports': 'ports',
+        'default_port': 'default_port',
         'addresses': 'addresses',
-        'mode': 'mode',
+        'network_mode': 'network_mode',
+        'networks': 'networks',
         'aliases': 'aliases',
     })
     extra_actions = {
         'port_scan': ['POST'],
+        'head': ['GET'],
     }
 
     def list(self):
@@ -134,6 +192,37 @@ class HostResource(BaseResource):
         "Get container detail."
         d = docker.DockerClient(base_url=f'unix://{DOCKER_SOCKET_PATH}')
         return _container_details(d.containers.get(pk))
+
+    @skip_prepare
+    def head(self):
+        try:
+            url = request.args['url']
+
+        except KeyError as e:
+            abort(400, {e.args[0]: ['is required']})
+
+        try:
+            r = requests.head(url, timeout=4.0)
+
+        except Timeout as e:
+            abort(HTTPStatus.GATEWAY_TIMEOUT, {'error': str(e)})
+
+        except ConnectionError as e:
+            abort(HTTPStatus.BAD_GATEWAY, {'error': str(e)})
+
+        if 'X-Frame-Options' in r.headers:
+            # The mere existence of this header indicates problems for
+            # previewing. We will override the http status code.
+            abort(HTTPStatus.CONFLICT, {
+                'http_status': r.status_code,
+                'headers': dict(r.headers),
+                'error': 'X-Frame-Options prevents preview',
+            })
+
+        return {
+            'http_status': r.status_code,
+            'headers': dict(r.headers),
+        }
 
     @skip_prepare
     def port_scan(self):

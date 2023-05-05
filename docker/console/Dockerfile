@@ -50,6 +50,9 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 
 FROM python AS node
 
+# For webpack:
+# https://github.com/webpack/webpack/issues/14532
+ENV NODE_OPTIONS=--openssl-legacy-provider
 ADD ./front /front
 
 # Install Node

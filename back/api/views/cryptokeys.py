@@ -20,25 +20,33 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from api.views import BaseResource, Form, abort
 from api.models import CryptoKey, Frontend
-from api.app import oauth
+from api.app import oauth, db, app
+from api.auth import get_logged_in_user
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
-CryptoKeyForm = model_form(CryptoKey, base_class=Form)
+CryptoKeyForm = model_form(CryptoKey, base_class=Form, exclude=['user'])
 
 
 cryptokey_preparer = FieldsPreparer(fields={
     'id': 'id',
     'type': 'type',
     'provision': 'provision',
-    'agent': 'agent',
+    'user': 'user',
     'private': 'private',
     'public': 'public',
     'created': 'created',
 })
+
+
+def app_request(method, *args, **kwargs):
+    "Make an api call within app context."
+    # NOTE: used as a shortcut by setup_endpoint_remote()
+    with app.app_context():
+        return method(*args, **kwargs)
 
 
 def raise_if_not_status(status, r, message):
@@ -183,7 +191,7 @@ class CryptoKeyResource(BaseResource):
             name=form.name.data, defaults={
                 'type': form.type.data,
                 'provision': form.provision.data,
-                'agent': form.agent.data,
+                'user': get_logged_in_user(),
                 'private': form.private.data,
                 'public': form.public.data,
             }
@@ -222,6 +230,7 @@ class CryptoKeyResource(BaseResource):
     @skip_prepare
     def sshkey(self):
         "Store SSH public key and host key."
+        LOGGER.info('saving')
         form = CryptoKeyForm(
             self.data,
             provision='internal',
@@ -229,42 +238,43 @@ class CryptoKeyResource(BaseResource):
         )
         if not form.validate():
             abort(400, form.errors)
-        cryptokey = CryptoKey.create(
-            name=form.name.data,
-            type=form.type.data,
-            provision=form.provision.data,
-            agent=form.agent.data,
-            private=form.private.data,
-            public=form.public.data,
-        )
-        shanty = getattr(oauth, 'shanty')
-
-        # NOTE: these calls are done in parallel.
-        calls = [
-            gevent.spawn(shanty.post, '/api/sshkeys/', data={
-                'type': form.type.data,
-                'key': form.public.data,
-            }),
-            gevent.spawn(shanty.get, '/api/sshkeys/public/'),
-        ]
-
-        # Get and validate api call results.
-        results = [a.get() for a in gevent.joinall(calls)]
-        raise_if_not_status(
-            201, results[0], 'Failure registering console / domain')
-        raise_if_not_status(
-            200, results[1], 'Failure fetching ssh host keys')
-
-        # Save host keys.
-        keys = results[1].json()
-        for i, host_key in enumerate(keys):
-            keys[i] = CryptoKey.create(
-                name=f'Conduit server host key {host_key["type"]}',
-                type=host_key['type'],
-                provision='internal',
-                agent=form.agent.data,
-                public=host_key['key'],
+        with db.database.atomic():
+            CryptoKey.create(
+                name=form.name.data,
+                type=form.type.data,
+                provision=form.provision.data,
+                public=form.public.data,
             )
-        keys.append(cryptokey)
+            shanty = getattr(oauth, 'shanty')
+            LOGGER.info('saved')
 
-        return self.serialize_list(keys)
+            # NOTE: these calls are done in parallel.
+            user = get_logged_in_user()
+            calls = [
+                gevent.spawn(
+                    app_request, shanty.post, '/api/consoles/register/', data={
+                        'type': form.type.data,
+                        'key': form.public.data,
+                        'uuid': user.username,
+                    }
+                ),
+                gevent.spawn(app_request, shanty.get, '/api/sshkeys/public/'),
+            ]
+
+            # Get and validate api call results.
+            results = [a.get() for a in gevent.joinall(calls)]
+            raise_if_not_status(
+                201, results[0], 'Failure registering console / domain')
+            raise_if_not_status(
+                200, results[1], 'Failure fetching ssh host keys')
+
+            # Save host keys.
+            for host_key in results[1].json():
+                CryptoKey.create(
+                    name=f'Conduit server host key {host_key["type"]}',
+                    type=host_key['type'],
+                    provision='internal',
+                    public=host_key['key'],
+                )
+
+        return 200

@@ -1,23 +1,31 @@
+import logging
+from base64 import b64decode
 from functools import wraps
 
 from flask import g, session, abort, request
 
-from api.models import User, Agent
+from api.models import User
+
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.addHandler(logging.NullHandler())
 
 
 def get_logged_in_user():
-    if session.get('authenticated'):
-        if getattr(g, 'user', None):
-            return g.user
+    "Retrieves user from global or session.."
+    if getattr(g, 'user', None):
+        return g.user
 
+    if session.get('authenticated'):
         try:
             user = User \
                 .select() \
                 .where(
-                    User.active == True,  # noqa: E712
+                    User.is_active == True,  # noqa: E712
                     User.id == session.get('user_pk')
                 ) \
                 .get()
+            g.user = user
             return user
 
         except User.DoesNotExist:
@@ -25,9 +33,13 @@ def get_logged_in_user():
 
 
 def log_in_user(username, password):
+    "Logs in user using session."
+    # NOTE: don't allow agents to login via UI.
     try:
         user = User.get(
-            User.username == username, User.active == True)  # noqa: E712
+            User.username == username,  # noqa: E712
+            User.is_active == True,     # noqa: E712
+            User.is_agent == False)     # noqa: E712
 
     except User.DoesNotExist:
         abort(401)
@@ -47,36 +59,57 @@ def log_out_user():
 
 
 def session_auth():
-    "Check for user in session."
+    "Session auth."
     return get_logged_in_user() is not None
 
 
-def agent_auth():
+def basic_auth():
+    "Basic auth for agents."
+    # NOTE: don't allow admins to login via Basic.
     auth = request.headers.get('Authorization')
-    if auth is None or not auth.startswith('Bearer '):
+    if not auth:
         return False
-    token = auth[7:]
+
+    username, password = b64decode(auth).split(':')
+
     try:
-        agent = Agent.get(
-            Agent.token == token, Agent.activated == True)  # noqa: E712
+        user = User.get(
+            User.username == username,  # noqa: E712
+            User.is_agent == True,      # noqa: E712
+            User.is_admin == False,     # noqa: E712
+            User.is_active == True)     # noqa: E712
 
-    except Agent.DoesNotExist:
+    except User.DoesNotExist:
         return False
 
-    g.user = agent.user
+    if not user.check_password(password):
+        return False
+
+    g.user = user
     return True
 
 
-def requires_auth(auth_methods=[session_auth]):
+def check_auth(auth_methods=None):
+    auth_methods = auth_methods or [session_auth, basic_auth]
+    for auth_method in auth_methods:
+        try:
+            if auth_method():
+                return True
+        except Exception:
+            LOGGER.debug('Auth error', exc_info=True)
+
+    return False
+
+
+def requires_auth(auth_methods=None):
     """
     Decorator that requires one of our auth methods for a function based view.
     """
     def wrapper(f):
         @wraps(f)
         def inner(*args, **kwargs):
-            for auth_method in auth_methods:
-                if auth_method():
-                    return f(*args, **kwargs)
+            if check_auth(auth_methods):
+                return f(*args, **kwargs)
             abort(401)
 
         return inner

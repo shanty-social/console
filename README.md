@@ -16,6 +16,14 @@ Think of homeland social as a reverse VPN. Instead of allowing you to connect to
 
 ![overview](https://raw.githubusercontent.com/homeland-social/console/master/docs/images/overview.png)
 
+## Docker labels
+
+The console reads docker image labels for metadata to aid in deployment and configuration.
+
+ - *social.homefree.console.category* - software category.
+ - *social.homefree.console.port.varname* - the environment variable name that controls the port.
+ - *social.homefree.console.port.default* - the default port used when variable is not defined.
+
 # LICENSE
 
 Copyright 2022 Homeland Social

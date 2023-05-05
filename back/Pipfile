@@ -21,6 +21,7 @@ uwsgi-chunked = "==0.1.8"
 gevent = "*"
 cryptography = "*"
 pytest-mock = "*"
+requests = "==2.28.1"
 
 [dev-packages]
 flake8 = "*"

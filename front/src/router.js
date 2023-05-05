@@ -2,7 +2,8 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@/store'
 import Settings from '@/views/Settings'
-import Endpoint from '@/views/Endpoint'
+import Frontends from '@/views/Frontends'
+import Backends from '@/views/Backends'
 import Home from '@/views/Home'
 import Authentication from '@/views/Authentication'
 
@@ -46,9 +47,15 @@ export default new Router({
       beforeEnter: requiresAuth
     },
     {
-      path: '/endpoint',
-      name: 'Endpoint',
-      component: Endpoint,
+      path: '/frontends',
+      name: 'Frontends',
+      component: Frontends,
+      beforeEnter: requiresAuth
+    },
+    {
+      path: '/backends',
+      name: 'Backends',
+      component: Backends,
       beforeEnter: requiresAuth
     }
   ]

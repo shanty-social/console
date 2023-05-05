@@ -27,15 +27,15 @@ export default {
     fetch({ commit }) {
       return new Promise((resolve, reject) => {
         axios
-        .get('/api/hosts/')
-        .then((r) => {
-          commit('set', r.data.objects)
-          resolve()
-        })
-        .catch((e) => {
-          console.error(e)
-          reject(e)
-        })
+          .get('/api/hosts/')
+          .then((r) => {
+            commit('set', r.data.objects)
+            resolve()
+          })
+          .catch((e) => {
+            console.error(e)
+            reject(e)
+          })
       })
     }
   }

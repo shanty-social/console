@@ -8,7 +8,7 @@ from pkg_resources import parse_version
 from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    TextField, BooleanField, UUIDField, SmallIntegerField, IPField,
+    TextField, BooleanField, UUIDField, SmallIntegerField,
 )
 from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
@@ -215,8 +215,9 @@ class User(db.Model):
     username = CharField(null=False, unique=True)
     password = CharField(null=True)
     name = CharField(null=True)
-    active = BooleanField(default=True)
-    admin = BooleanField(default=False)
+    is_active = BooleanField(default=True)
+    is_admin = BooleanField(default=False)
+    is_agent = BooleanField(default=False)
 
     def set_password(self, password):
         self.password = make_password(password)
@@ -240,35 +241,16 @@ class Backend(SignalMixin, db.Model):
     created = DateTimeField(default=datetime.now)
 
 
-class Agent(db.Model):
-    "Remote agents."
-    uuid = UUIDField(null=False, unique=True)
-    name = CharField(null=False)
-    user = ForeignKeyField(User, backref='agents')
-    description = CharField(null=True)
-    remote_addr = IPField(null=False)
-    token = CharField(null=False, unique=True)
-    activated = BooleanField(default=False)
-    created = DateTimeField(default=datetime.now)
-
-    def save(self, *args, **kwargs):
-        try:
-            self.user
-        except User.DoesNotExist:
-            self.user = User.create(name='Agent', username=self.uuid)
-        return super().save(*args, **kwargs)
-
-
 class CryptoKey(SignalMixin, db.Model):
     "SSH and SSL keys."
     type = CharField(null=False)
     name = CharField(null=False, unique=True)
+    user = ForeignKeyField(User, null=True, backref='keys')
     provision = CharField(choices=[
         ('internal', 'internal'),
         ('letsencrypt', 'letsencrypt'),
         ('manual', 'manual'),
     ])
-    agent = ForeignKeyField(Agent, null=True, backref='keys')
     private = TextField(null=True)
     public = TextField()
     created = DateTimeField(default=datetime.now)

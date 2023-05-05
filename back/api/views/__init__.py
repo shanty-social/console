@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import urlparse, urlunparse
 from itertools import chain
 
@@ -12,8 +13,12 @@ from werkzeug.routing import RoutingException
 
 from wtforms import Form as _Form
 
-from api.auth import session_auth, agent_auth
+from api.auth import check_auth
 from api.config import EXTERNAL_HOST
+
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.addHandler(logging.NullHandler())
 
 
 def url_for(*args, **kwargs):
@@ -152,11 +157,8 @@ class MultiSerializer(Serializer):
 class BaseResource(FlaskResource):
     # NOTE: authentication is required by default but can be disabled.
     auth_required = True
-    # Auth methods can be defined on per-view basis, these are defaults.
-    auth_methods = [
-        session_auth,
-        agent_auth,
-    ]
+    # Auth methods can be defined on per-view basis, None uses defaults.
+    auth_methods = None
     extra_actions = {}
     extra_details = {}
 
@@ -189,15 +191,7 @@ class BaseResource(FlaskResource):
         if not self.auth_required:
             return True
 
-        for method in self.auth_methods:
-            try:
-                if method():
-                    return True
-
-            except Exception:
-                pass
-
-        return False
+        return check_auth(self.auth_methods)
 
     def handle_error(self, err):
         """
@@ -208,6 +202,8 @@ class BaseResource(FlaskResource):
         :type err: Exception
         :returns: A response object
         """
+        LOGGER.exception(err)
+
         if self.bubble_exceptions():
             raise err
 

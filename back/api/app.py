@@ -1,6 +1,8 @@
 import logging
 from pprint import pformat
 
+from gevent import monkey; monkey.patch_all(thread=False)  # noqa: E702
+
 from authlib.integrations.flask_client import OAuth
 
 from flask import Flask, json
@@ -56,10 +58,11 @@ socketio = SocketIO(app, cors_allowed_origins='*', json=json)
 @socketio.on('connect')
 def socketio_auth():
     "Perform session authentication."
-    from api.auth import get_logged_in_user
+    from api.auth import get_logged_in_user, agent_auth
     if not get_logged_in_user():
-        LOGGER.info('Websocket failed auth')
-        disconnect()
+        if not agent_auth():
+            LOGGER.info('Websocket failed auth')
+            disconnect()
     LOGGER.debug('Websocket connected')
 
 

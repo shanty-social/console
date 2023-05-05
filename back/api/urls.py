@@ -7,7 +7,6 @@ from api.views.backends import BackendResource
 from api.views.hosts import HostResource
 from api.views.messages import MessageResource
 from api.views.users import UserResource
-from api.views.agents import AgentResource
 from api.views.cryptokeys import CryptoKeyResource
 
 
@@ -20,5 +19,4 @@ BackendResource.add_url_rules(app, rule_prefix='/api/backends/')
 MessageResource.add_url_rules(app, rule_prefix='/api/messages/')
 UserResource.add_url_rules(app, rule_prefix='/api/users/')
 OAuthClientResource.add_url_rules(app, rule_prefix='/api/oauth/')
-AgentResource.add_url_rules(app, rule_prefix='/api/agents/')
 CryptoKeyResource.add_url_rules(app, rule_prefix='/api/cryptokeys/')

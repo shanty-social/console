@@ -36,50 +36,50 @@ export default {
     fetch ({ commit }) {
       return new Promise((resolve, reject) => {
         axios
-        .get('/api/endpoints/')
-        .then((r) => {
-          commit('set', r.data.objects)
-          resolve()
-        })
-        .catch((e) => {
-          console.error(e)
-          reject(e)
-        })
+          .get('/api/backends/')
+          .then((r) => {
+            commit('set', r.data.objects)
+            resolve()
+          })
+          .catch((e) => {
+            console.error(e)
+            reject(e)
+          })
       })
     },
 
     remove ({ commit, state }, id) {
       return new Promise((resolve, reject) => {
         axios
-        .delete(`/api/endpoints/${id}/`)
-        .then(() => {
-          const data = state.data.filter((o) => o.id !== id)
-          commit('set', data)
-          resolve(data)
-        })
-        .catch((e) => {
-          console.error(e)
-          reject(e)
-        })
+          .delete(`/api/backends/${id}/`)
+          .then(() => {
+            const data = state.data.filter((o) => o.id !== id)
+            commit('set', data)
+            resolve(data)
+          })
+          .catch((e) => {
+            console.error(e)
+            reject(e)
+          })
       })
     },
 
     save({ commit }, obj) {
       const { id } = obj
       const method = (id) ? axios.put : axios.post
-      let url = '/api/endpoints/'
+      let url = '/api/backends/'
       if (id) url += `${id}/`
 
       return new Promise((resolve, reject) => {
         method(url, obj)
-        .then((r) => {
-          commit('update', r.data)
-          resolve(r.data)
-        })
-        .catch((e) => {
-          console.error(e)
-          reject(e)
-        })
+          .then((r) => {
+            commit('update', r.data)
+            resolve(r.data)
+          })
+          .catch((e) => {
+            console.error(e)
+            reject(e)
+          })
       })
     }
   }
