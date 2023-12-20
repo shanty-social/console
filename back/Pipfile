@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
+flask = "==2.1.3"
 flask-socketio = "*"
 flask-caching = "*"
 flask-peewee = "*"
@@ -20,6 +20,8 @@ wtf-peewee = "*"
 uwsgi-chunked = "==0.1.8"
 gevent = "*"
 conduit-client = {subdirectory = "client", ref = "9df616d79d349c796988975a1f536c5f3ae6bedc", git = "https://github.com/shanty-social/conduit.git"}
+Werkzeug = "==2.2.2"
+python-socketio = "==5.7.2"
 
 [dev-packages]
 flake8 = "*"

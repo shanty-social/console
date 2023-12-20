@@ -2,6 +2,7 @@ version: "3.7"
 
 volumes:
   db:
+  node-modules:
 
 networks:
   shared:
@@ -14,7 +15,7 @@ services:
     image: console/back
     build:
       dockerfile: ./docker/console/Dockerfile
-      target: python
+      target: build
       context: ./
     networks:
       - private
@@ -23,7 +24,7 @@ services:
       - www.shanty.local:192.168.100.200
       - ssh.shanty.local:192.168.100.201
     volumes:
-      - ./back/api:/app/api:ro
+      - ./back/api:/app/api
       - ./docker/console/entrypoint.sh:/entrypoint.sh:ro
       - ./docker/console/client.key:/var/lib/console/client.key:ro
       - /var/run/docker.sock:/var/run/sockets/docker.sock
@@ -50,9 +51,9 @@ services:
       - SSH_HOST_KEYS_FILE=/var/lib/console/authorized_keys
 
   console-front:
-    image: console/vue
+    image: console/front
     build:
-      dockerfile: ./docker/console/Dockerfile
+      dockerfile: ./docker/front/Dockerfile
       target: node
       context: ./
     depends_on:
@@ -60,7 +61,13 @@ services:
     networks:
       - private
     volumes:
-      - ./front:/front:ro
+      - ./front/public:/front/public:ro
+      - ./front/src:/front/src:ro
+      - ./front/static:/front/static:ro
+      - ./front/babel.config.js:/front/babel.config.js:ro
+      - ./front/package.json:/front/package.json:ro
+      - ./front/package-lock.json:/front/package-lock.json:ro
+      - ./front/vue.config.js:/front/vue.config.js:ro
     ports:
       - 8080:8080
     environment:
