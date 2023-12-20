@@ -27,6 +27,7 @@ python-socketio = "==5.7.2"
 flake8 = "*"
 pytest = "*"
 pytest-cov = "*"
+exceptiongroup = "*"
 
 [requires]
 python_version = "3"
