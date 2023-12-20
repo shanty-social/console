@@ -12,6 +12,10 @@ if [ ! -z "${FLASK_DEBUG}" ]; then
     UWSGI_ARGS="--py-autoreload=1"
 fi
 
+if [ "${START_COMPOSE}" == "yes" ]; then
+    docker-compose -p system -f /app/docker-compose.yml up -d
+fi
+
 mkdir -p ${FLASK_SESSION_FILE_DIR}
 chown nobody:nobody $(dirname ${FLASK_DB_PATH})
 chown nobody:nobody ${FLASK_SESSION_FILE_DIR}

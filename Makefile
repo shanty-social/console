@@ -10,7 +10,7 @@ shared:
 
 .PHONY: build
 build:
-	${DOCKER_COMPOSE} build
+	${DOCKER_COMPOSE} build --progress=plain
 
 
 .PHONY: test
@@ -48,9 +48,13 @@ tarball:
 			  -v ${PWD}/output:/output tarball
 
 
-.PHONY: final
-final:
-	${DOCKER} build . -f docker/console/Dockerfile --target=final -t console-final 
+.PHONY: back-final
+back-final:
+	${DOCKER} build . -f docker/console/Dockerfile --target=final --no-cache -t console-back-final
+
+.PHONY: front-final
+front-final:
+	${DOCKER} build . -f docker/front/Dockerfile --target=final -t console-front-final
 
 .PHONY: clean
 clean:

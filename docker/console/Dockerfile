@@ -1,9 +1,12 @@
-FROM ${ARCH}alpine:3.15 AS python
+ARG ALPINE_VERSION=3.18
+ARG NODE_VERSION=3.12
+
+FROM ${ARCH}python:${NODE_VERSION}-alpine${ALPINE_VERSION} AS build
 
 ARG DOCKER_GID=130
 ARG CERT_DIR=/var/lib/certs
 ENV CERT_DIR=${CERT_DIR}
-ENV MKP224O_TAG=v1.5.0
+# ENV MKP224O_TAG=v1.5.0
 
 ENV FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant \
     FLASK_NDS_SOCKET_PATH=/var/run/sockets/nds \
@@ -29,50 +32,50 @@ RUN chmod +x /entrypoint.sh
 
 # Install Python
 WORKDIR /app
-RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
-                       python3-dev git libsodium libsodium-dev autoconf libffi libffi-dev \
-                       musl-dev pcre2 pcre2-dev openssl openssl-dev && \
-    pip install wheel pipenv && \
-    pipenv install --system --skip-lock && \
-    mkdir -p /usr/local/src && cd /usr/local/src && \
-    git clone --branch ${MKP224O_TAG} https://github.com/cathugger/mkp224o.git && cd mkp224o && \
-    ./autogen.sh && ./configure --enable-regex=yes && \
-    make && install mkp224o /usr/local/bin/mkp224o && \
-    cd / && rm -rf /usr/local/src && \
-    apk del build-base python3-dev git libsodium-dev autoconf pcre2-dev libffi-dev musl-dev openssl-dev && \
-    addgroup -g ${DOCKER_GID} docker && \
-    adduser nobody docker && \
-    mkdir ${CERT_DIR} && \
-    chown -R nobody:nobody ${CERT_DIR}
+RUN apk add --no-cache py3-pip git build-base py3-cryptography python3-dev \
+                       libsodium libsodium-dev autoconf libffi libffi-dev \
+                       musl-dev pcre2 pcre2-dev openssl openssl-dev binutils \
+                       sqlite-libs
+# RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
+#                        python3-dev git libsodium libsodium-dev autoconf libffi libffi-dev \
+#                        musl-dev pcre2 pcre2-dev openssl openssl-dev
+RUN pip install pipenv
+RUN pipenv install --system --skip-lock
+# RUN mkdir -p /usr/local/src && cd /usr/local/src
+# RUN git clone --branch ${MKP224O_TAG} https://github.com/cathugger/mkp224o.git && cd mkp224o
+# RUN ./autogen.sh && ./configure --enable-regex=yes
+# RUN make && install mkp224o /usr/local/bin/mkp224o
+RUN addgroup -g ${DOCKER_GID} docker
+RUN adduser nobody docker
+RUN mkdir ${CERT_DIR}
+RUN chown -R nobody:nobody ${CERT_DIR}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
+FROM build as strip
 
-FROM python AS node
+#RUN find /usr/local -name '*.so' | xargs strip -s
+RUN pip uninstall -y pipenv
+RUN pip uninstall -y pip
+RUN rm -rf /usr/local/lib/python*/ensurepip
+RUN rm -rf /usr/local/lib/python*/idlelib
+RUN rm -rf /usr/local/lib/python*/distutils/command
+RUN rm -rf /usr/local/lib/python*/lib2to2
+RUN rm -rf /usr/local/lib/python*/__pycache__/*
+RUN find /usr/local/include/python* -not -name pyconfig.h -type f -exec rm {} \;
+RUN find /usr/local/bin \( -not -name 'python*' -and -not -name 'uwsgi' \) -and \( -type f -o -type l \) -exec rm {} \;
+RUN rm -rf /usr/local/share/*
 
-ADD ./front /front
+FROM ${ARCH}alpine:${ALPINE_VERSION} AS final
 
-# Install Node
-WORKDIR /front
-RUN apk add --no-cache nodejs npm && \
-    npm i
+RUN apk add --no-cache docker-cli docker-cli-compose openssl zlib libsodium libffi libexpat sqlite-libs
 
-ENTRYPOINT [ "npm", "run", "serve" ]
-
-
-FROM node AS build
-
-# Build vue application.
-WORKDIR /front
-RUN npm run build
-
-
-FROM python AS final
-
-# Copy vue static files.
-COPY --from=build /front/dist/assets /app/assets
-COPY --from=build /front/dist/index.html* /app/assets/
+COPY --from=strip /app/api /app/api
+COPY --from=strip /usr/local/ /usr/local/
+COPY --from=strip /entrypoint.sh /entrypoint.sh
+ADD ./docker/console/docker-compose.yml /app
 
 USER nobody
 
 WORKDIR /app
+ENTRYPOINT [ "/entrypoint.sh" ]
