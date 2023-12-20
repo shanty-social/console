@@ -1,4 +1,7 @@
-FROM ${ARCH}python:3.12-alpine3.18 AS build
+ARG ALPINE_VERSION=3.18
+ARG NODE_VERSION=3.12
+
+FROM ${ARCH}python:${NODE_VERSION}-alpine${ALPINE_VERSION} AS build
 
 ARG DOCKER_GID=130
 ARG CERT_DIR=/var/lib/certs
@@ -31,7 +34,8 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /app
 RUN apk add --no-cache py3-pip git build-base py3-cryptography python3-dev \
                        libsodium libsodium-dev autoconf libffi libffi-dev \
-                       musl-dev pcre2 pcre2-dev openssl openssl-dev
+                       musl-dev pcre2 pcre2-dev openssl openssl-dev binutils \
+                       sqlite-libs
 # RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
 #                        python3-dev git libsodium libsodium-dev autoconf libffi libffi-dev \
 #                        musl-dev pcre2 pcre2-dev openssl openssl-dev
@@ -48,11 +52,27 @@ RUN chown -R nobody:nobody ${CERT_DIR}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
-FROM ${ARCH}alpine:3.15 AS final
+FROM build as strip
 
-# Copy vue static files.
-COPY --from=build /usr/local/ /usr/local/
+#RUN find /usr/local -name '*.so' | xargs strip -s
+RUN pip uninstall -y pipenv
+RUN pip uninstall -y pip
+RUN rm -rf /usr/local/lib/python*/ensurepip
+RUN rm -rf /usr/local/lib/python*/idlelib
+RUN rm -rf /usr/local/lib/python*/distutils/command
+RUN rm -rf /usr/local/lib/python*/lib2to2
+RUN rm -rf /usr/local/lib/python*/__pycache__/*
+RUN find /usr/local/include/python* -not -name pyconfig.h -type f -exec rm {} \;
+RUN find /usr/local/bin \( -not -name 'python*' -and -not -name 'uwsgi' \) -and \( -type f -o -type l \) -exec rm {} \;
+RUN rm -rf /usr/local/share/*
 
+FROM ${ARCH}alpine:${ALPINE_VERSION} AS final
+
+RUN apk add --no-cache openssl zlib libsodium libffi libexpat sqlite-libs
+COPY --from=strip /app/api /app/api
+COPY --from=strip /usr/local/ /usr/local/
+COPY --from=strip /entrypoint.sh /entrypoint.sh
 USER nobody
 
 WORKDIR /app
+ENTRYPOINT [ "/entrypoint.sh" ]

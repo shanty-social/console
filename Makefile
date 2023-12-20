@@ -50,7 +50,7 @@ tarball:
 
 .PHONY: back-final
 back-final:
-	${DOCKER} build . -f docker/console/Dockerfile --target=final -t console-back-final
+	${DOCKER} build . -f docker/console/Dockerfile --target=final --no-cache -t console-back-final
 
 .PHONY: front-final
 front-final:
