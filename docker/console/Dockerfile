@@ -39,6 +39,7 @@ RUN apk add --no-cache py3-pip git build-base py3-cryptography python3-dev \
 # RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
 #                        python3-dev git libsodium libsodium-dev autoconf libffi libffi-dev \
 #                        musl-dev pcre2 pcre2-dev openssl openssl-dev
+RUN pip install -U pip
 RUN pip install pipenv
 RUN pipenv install --system --skip-lock
 # RUN mkdir -p /usr/local/src && cd /usr/local/src
