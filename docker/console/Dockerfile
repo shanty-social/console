@@ -68,10 +68,13 @@ RUN rm -rf /usr/local/share/*
 
 FROM ${ARCH}alpine:${ALPINE_VERSION} AS final
 
-RUN apk add --no-cache openssl zlib libsodium libffi libexpat sqlite-libs
+RUN apk add --no-cache docker-cli docker-cli-compose openssl zlib libsodium libffi libexpat sqlite-libs
+
 COPY --from=strip /app/api /app/api
 COPY --from=strip /usr/local/ /usr/local/
 COPY --from=strip /entrypoint.sh /entrypoint.sh
+ADD ./docker/console/docker-compose.yml /app
+
 USER nobody
 
 WORKDIR /app

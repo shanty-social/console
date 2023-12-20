@@ -1,0 +1,62 @@
+version: "3"
+
+secrets:
+  lldap_jwt:
+    file: /data/compose/secrets/lldap_jwt
+  lldap_pass:
+    file: /data/compose/secrets/lldap_pass
+  auth_jwt:
+    file: /data/compose/secrets/auth_jwt
+  auth_sess:
+    file: /data/compose/secrets/auth_sess
+  auth_enc:
+    file: /data/compose/secrets/auth_enc
+
+services:
+  yacht:
+    image: homelandsocial/yacht:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /data/containers/yacht:/config
+
+  lldap:
+    image: lldap/lldap:2023-12-15-alpine
+    volumes:
+      - /data/containers/lldap/data:/data
+    secrets:
+      - lldap_jwt
+      - lldap_pass
+    environment:
+      - LLDAP_JWT_SECRET_FILE=/run/secrets/lldap_jwt
+      - LLDAP_LDAP_USER_PASS_FILE=/run/secrets/lldap_pass
+      - LLDAP_LDAP_BASE_DN=dc=btimby,dc=slipos,dc=site
+
+  authelia:lts
+    image: authelia/authelia:4
+    depends_on:
+      - lldap
+    volumes:
+      - /data/containers/authelia/config:/config
+    secrets:
+      - lldap_pass
+      - auth_jwt
+      - auth_sess
+      - auth_enc
+    environment:
+      - AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE=/run/secrets/lldap_pass
+      - AUTHELIA_JWT_SECRET_FILE=/run/secrets/auth_jwt
+      - AUTHELIA_SESSION_SECRET_FILE=/run/secrets/auth_sess
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=/run/secrets/auth_enc
+
+  caddy:
+    image: caddy:2.7-alpine
+    depends_on:
+      - authelia
+      - yacht
+    volumes:
+      - /data/containers/caddy/data:/data
+      - /data/containers/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
