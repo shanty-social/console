@@ -39,10 +39,16 @@ jobs:
 
       - name: build and push console
         run: |
-          docker buildx build -f docker/console/Dockerfile \
+          docker buildx build --target=final -f docker/console/Dockerfile \
             --push \
             --tag ${{secrets.DOCKER_ORG}}/console:latest \
             --tag ${{secrets.DOCKER_ORG}}/console:${{env.tag}} \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 .
+
+          docker buildx build --target=final -f docker/front/Dockerfile \
+            --push \
+            --tag ${{secrets.DOCKER_ORG}}/ui:latest \
+            --tag ${{secrets.DOCKER_ORG}}/ui:${{env.tag}} \
             --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
           # docker buildx build -f docker/tor/Dockerfile \
