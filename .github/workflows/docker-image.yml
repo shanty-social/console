@@ -59,13 +59,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ secrets.DOCKER_ORG }}/console
 
-      - name: Tarball
-        run: |
-          make tarball
+      # - name: Tarball
+      #   run: |
+      #     make tarball
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{env.tag}}
-          files: |
-            output/var-lib-docker.tgz
+      # - name: Release
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     tag_name: ${{env.tag}}
+      #     files: |
+      #      output/var-lib-docker.tgz
