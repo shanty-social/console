@@ -1,16 +1,11 @@
-
-  
 # https://www.docker.com/blog/multi-arch-build-and-images-the-simple-way/
 name: build docker image
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
-  docker:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
@@ -22,8 +17,16 @@ jobs:
           sudo pip3 install pipenv
           make ci
 
+  docker-image:
+    needs: test
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+
       - name: Create tag
-        run: echo "tag=$(date +%s)" >> $GITHUB_ENV
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: install buildx
         id: buildx
@@ -43,19 +46,13 @@ jobs:
             --push \
             --tag ${{secrets.DOCKER_ORG}}/console:latest \
             --tag ${{secrets.DOCKER_ORG}}/console:${{env.tag}} \
-            --platform linux/amd64,linux/arm/v7,linux/arm64 .
+            --platform linux/amd64,linux/arm64 .
 
           docker buildx build --target=final -f docker/front/Dockerfile \
             --push \
             --tag ${{secrets.DOCKER_ORG}}/ui:latest \
             --tag ${{secrets.DOCKER_ORG}}/ui:${{env.tag}} \
-            --platform linux/amd64,linux/arm/v7,linux/arm64 .
-
-          # docker buildx build -f docker/tor/Dockerfile \
-          #   --push \
-          #   --tag ${{secrets.DOCKER_ORG}}/tor:latest \
-          #   --tag ${{secrets.DOCKER_ORG}}/tor:${{env.tag}} \
-          #   --platform linux/amd64,linux/arm/v7,linux/arm64 .
+            --platform linux/amd64,linux/arm64 .
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v2
@@ -64,14 +61,3 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ secrets.DOCKER_ORG }}/console
-
-      # - name: Tarball
-      #   run: |
-      #     make tarball
-
-      # - name: Release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     tag_name: ${{env.tag}}
-      #     files: |
-      #      output/var-lib-docker.tgz
