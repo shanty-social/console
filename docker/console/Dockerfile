@@ -76,7 +76,5 @@ COPY --from=strip /usr/local/ /usr/local/
 COPY --from=strip /entrypoint.sh /entrypoint.sh
 ADD ./docker/console/docker-compose.yml /app
 
-USER nobody
-
 WORKDIR /app
 ENTRYPOINT [ "/entrypoint.sh" ]

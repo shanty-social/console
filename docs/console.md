@@ -40,6 +40,7 @@ $ docker -ti homelandsocial/console
 | `SSH_PORT` | SSH port | `2222` |
 | `SSH_KEY_FILE` | SSH client key path | `/var/lib/console/client.key` |
 | `SSH_HOST_KEYS_FILE` | SSH host key path (fetched automatically) | `/var/lib/console/authorized_keys` |
+| `COMPOSE_PATH` | path to docker-compose.yml | `/app/docker-compose.yml` |
 
 ## Volumes
 

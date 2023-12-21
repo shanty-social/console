@@ -43,7 +43,7 @@ services:
       - FLASK_UUID_PATH=/var/lib/console/console.uuid
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
       - FLASK_SHANTY_OAUTH_CONFIG_URL=http://www.shanty.local:8000/api/oauth/config.json
-      - FLASK_SHANTY_BASE_URL=http://www.shanty.local:8000/
+      - FLASK_SHANTY_BASE_URL=http://slipos.io:8000/
       - CERT_DIR=/var/lib/certs
       - SSH_HOST=ssh.shanty.local
       - SSH_PORT=2222
