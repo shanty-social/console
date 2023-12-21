@@ -35,7 +35,7 @@ WORKDIR /app
 RUN apk add --no-cache py3-pip git build-base py3-cryptography python3-dev \
                        libsodium libsodium-dev autoconf libffi libffi-dev \
                        musl-dev pcre2 pcre2-dev openssl openssl-dev binutils \
-                       sqlite-libs
+                       sqlite-libs rust
 # RUN apk add --no-cache linux-headers build-base python3 py3-pip py3-cryptography mailcap \
 #                        python3-dev git libsodium libsodium-dev autoconf libffi libffi-dev \
 #                        musl-dev pcre2 pcre2-dev openssl openssl-dev
