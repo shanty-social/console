@@ -20,6 +20,7 @@ wtf-peewee = "*"
 gevent = "*"
 Werkzeug = "==2.2.2"
 python-socketio = "==5.7.2"
+paramiko = "*"
 
 [dev-packages]
 flake8 = "*"

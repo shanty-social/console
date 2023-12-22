@@ -95,8 +95,6 @@ SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
 
 EXTERNAL_HOST = urlparse(os.getenv('EXTERNAL_HOST', 'http://localhost:8080'))
 
-SSH_HOST = os.getenv('SSH_HOST', 'ssh.homeland-social.com')
-SSH_PORT = int(os.getenv('SSH_PORT', 2222))
 SSH_KEY_FILE = os.getenv('SSH_KEY_FILE', '/var/lib/console/client.key')
 SSH_HOST_KEYS_FILE = os.getenv(
     'SSH_HOST_KEYS_FILE', '/var/lib/console/authorized_keys')

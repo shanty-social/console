@@ -16,7 +16,9 @@ ENV FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant \
     FLASK_PORT=8008 \
     FLASK_DB_PATH=/var/lib/console/db.sqlite3 \
     FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache \
-    FLASK_SHANTY_BASE_URL=https://www.homeland-social.com/
+    FLASK_SHANTY_BASE_URL=https://www.homeland-social.com/ \
+    SSH_KEY_FILE= \
+    SSH_HOST_KEYS_FILE=
 
 # Add the python application, be sure to exclude dotfiles.
 ADD ./back/api /app/api/

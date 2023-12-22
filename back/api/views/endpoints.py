@@ -1,6 +1,9 @@
 import logging
+from os.path import isfile
 
 import gevent
+
+import paramiko
 
 from flask import request
 from flask_peewee.utils import get_object_or_404
@@ -9,12 +12,9 @@ from restless.preparers import FieldsPreparer
 
 from wtfpeewee.orm import model_form
 
-from conduit_client.ssh import load_key, save_host_keys, Tunnel
-
-from api.app import app, oauth, ssh
-from api.tasks import cron, defer
+from api.app import app, oauth
 from api.views import BaseResource, Form, abort
-from api.models import Endpoint, Message
+from api.models import Endpoint
 from api.config import CONSOLE_UUID, SSH_KEY_FILE, SSH_HOST_KEYS_FILE
 
 
@@ -25,52 +25,32 @@ LOGGER.addHandler(logging.NullHandler())
 EndpointForm = model_form(Endpoint, base_class=Form)
 
 
-@cron('* * * * *', retain_task=False)
-def check_endpoint_ssh():
-    "SSH tunnel status check"
-    endpoints = list(Endpoint.select())
-    LOGGER.debug('Checking %i tunnels', len(endpoints))
+def load_key(path=SSH_KEY_FILE):
+    "Generate a client key for use with the library."
+    if path is not None:
+        if isfile(path):
+            LOGGER.debug('Loading key from: %s', path)
+            return paramiko.RSAKey.from_private_key_file(path)
+    LOGGER.info('Generating new private key')
+    key = paramiko.RSAKey.generate(2048)
+    if path is not None:
+        LOGGER.debug('Saving new to key: %s', path)
+        key.write_private_key_file(path)
+    return key
 
+
+def save_host_keys(keys, path=SSH_HOST_KEYS_FILE):
+    "Saves host keys where ssh client will look for them."
+    if path is None:
+        raise FileNotFoundError('SSH_HOST_KEYS_FILE file not defined')
+    keys, existing = set(keys), set()
     try:
-        ssh.ping()
-
-    except Exception as e:
-        LOGGER.exception('Error checking ssh health')
-        Message.send(
-            'SSH tunnel status', f'SSH tunnel is down, error: {e.args[0]}')
-        return
-
-    # Find which tunnels to add or remove.
-    add, remove, keep, tunnels = [], [], [], ssh.list_tunnels()
-    LOGGER.debug('Received list of %i tunnels', len(tunnels))
-    for endpoint in endpoints:
-        tunnel = Tunnel(endpoint.domain_name, endpoint.addr, endpoint.port)
-        found = any([
-            tunnel == t for t in tunnels
-        ])
-        if found:
-            keep.append(tunnel)
-        else:
-            add.append(tunnel)
-    for tunnel in tunnels:
-        found = any([
-            tunnel == t for t in keep
-        ])
-        if not found:
-            remove.append(tunnel)
-
-    # Add and remove tunnels
-    LOGGER.debug(
-        'Tunnels: keep=%i, add=%i, remove=%i',
-        len(keep), len(add), len(remove))
-    for tunnel in remove:
-        yield f'Removing endpoint {endpoint.name}'
-        ssh.del_tunnel(tunnel)
-    for tunnel in add:
-        yield f'Setting up endpoint {endpoint.name}'
-        ssh.add_tunnel(tunnel)
-
-    return f'Set up {len(endpoints)} endpoints'
+        with open(path, 'r') as f:
+            existing.update(f.read().split('\n'))
+    except FileNotFoundError:
+        pass
+    with open(path, 'a') as f:
+        f.write('\n'.join(keys.difference(existing)))
 
 
 def setup_endpoint_remote(domain_name, service_name):
@@ -169,8 +149,6 @@ class EndpointResource(BaseResource):
         if not created:
             form.populate_obj(endpoint)
             endpoint.save()
-        # NOTE: this task ensures ssh tunnels are set up.
-        defer(check_endpoint_ssh)
         return endpoint
 
     def update(self, pk):
@@ -181,8 +159,6 @@ class EndpointResource(BaseResource):
             abort(400, form.errors)
         form.populate_obj(endpoint)
         endpoint.save()
-        # NOTE: this task ensures ssh tunnels are set up.
-        defer(check_endpoint_ssh)
         return endpoint
 
     def delete(self, pk):
@@ -191,5 +167,3 @@ class EndpointResource(BaseResource):
         # shanty = getattr(oauth, service_name)
         # r = shanty.delete('/api/hosts/${endpoint.domain_name}')
         endpoint.delete_instance()
-        # NOTE: this task ensures ssh tunnels are removed.
-        defer(check_endpoint_ssh)
