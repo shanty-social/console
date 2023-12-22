@@ -48,7 +48,7 @@ jobs:
             --tag ${{secrets.DOCKER_ORG}}/console:${{env.tag}} \
             --platform linux/amd64,linux/arm64 .
 
-          docker buildx build --target=final -f docker/conduit/Dockerfile \
+          docker buildx build -f docker/conduit/Dockerfile \
             --push \
             --tag ${{secrets.DOCKER_ORG}}/conduit:latest \
             --tag ${{secrets.DOCKER_ORG}}/conduit:${{env.tag}} \
