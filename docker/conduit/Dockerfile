@@ -1,6 +1,6 @@
 FROM ${ARCH}alpine:3.18
 
-ADD ./docker/sshc/entrypoint.sh /entrypoint.sh
+ADD ./docker/conduit/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENV SSH_KEY_PATH=/etc/ssh/keys/id_ecdsa
