@@ -47,3 +47,5 @@ uwsgi --enable-threads --http=${FLASK_HOST}:${FLASK_PORT} \
       --uid=${PUID} --gid=${PGID} --cache2 name=default,items=${FLASK_CACHE_SIZE} \
       --http-websockets --gevent 1000 --manage-script-name \
       --mount /=api.wsgi:app ${UWSGI_ARGS} \
+      --static-map /assets=/app/assets --static-map /=/app/assets \
+      --static-index=index.html --static-gzip-all

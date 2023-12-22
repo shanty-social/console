@@ -48,13 +48,10 @@ tarball:
 			  -v ${PWD}/output:/output tarball
 
 
-.PHONY: back-final
-back-final:
+.PHONY: final
+final:
 	${DOCKER} build . -f docker/console/Dockerfile --target=final --no-cache -t console-back-final
 
-.PHONY: front-final
-front-final:
-	${DOCKER} build . -f docker/front/Dockerfile --target=final -t console-front-final
 
 .PHONY: clean
 clean:

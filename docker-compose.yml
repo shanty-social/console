@@ -15,7 +15,7 @@ services:
     image: console/back
     build:
       dockerfile: ./docker/console/Dockerfile
-      target: build
+      target: python
       context: ./
     networks:
       - private

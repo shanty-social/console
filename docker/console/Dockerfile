@@ -1,7 +1,8 @@
 ARG ALPINE_VERSION=3.18
-ARG NODE_VERSION=3.12
+ARG PYTHON_VERSION=3.12
+ARG NODE_VERSION=21
 
-FROM ${ARCH}python:${NODE_VERSION}-alpine${ALPINE_VERSION} AS build
+FROM ${ARCH}python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} AS python
 
 ARG DOCKER_GID=130
 ARG CERT_DIR=/var/lib/certs
@@ -53,7 +54,8 @@ RUN chown -R nobody:nobody ${CERT_DIR}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 
-FROM build as strip
+
+FROM python as strip
 
 #RUN find /usr/local -name '*.so' | xargs strip -s
 RUN pip uninstall -y pipenv
@@ -67,6 +69,19 @@ RUN find /usr/local/include/python* -not -name pyconfig.h -type f -exec rm {} \;
 RUN find /usr/local/bin \( -not -name 'python*' -and -not -name 'uwsgi' \) -and \( -type f -o -type l \) -exec rm {} \;
 RUN rm -rf /usr/local/share/*
 
+
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS node
+
+ADD ./front /front
+
+WORKDIR /front
+ENV NODE_OPTIONS=--openssl-legacy-provider
+RUN npm i
+RUN npm run build
+
+ENTRYPOINT [ "npm", "run", "serve" ]
+
+
 FROM ${ARCH}alpine:${ALPINE_VERSION} AS final
 
 RUN apk add --no-cache docker-cli docker-cli-compose openssl zlib libsodium libffi libexpat sqlite-libs
@@ -74,6 +89,7 @@ RUN apk add --no-cache docker-cli docker-cli-compose openssl zlib libsodium libf
 COPY --from=strip /app/api /app/api
 COPY --from=strip /usr/local/ /usr/local/
 COPY --from=strip /entrypoint.sh /entrypoint.sh
+COPY --from=node /front/dist /app/assets
 ADD ./docker/console/docker-compose.yml /app
 
 WORKDIR /app
