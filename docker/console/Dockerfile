@@ -5,8 +5,6 @@ ARG NODE_VERSION=21
 FROM ${ARCH}python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} AS python
 
 ARG DOCKER_GID=130
-ARG CERT_DIR=/var/lib/certs
-ENV CERT_DIR=${CERT_DIR}
 # ENV MKP224O_TAG=v1.5.0
 
 ENV FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant \
@@ -18,12 +16,7 @@ ENV FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant \
     FLASK_PORT=8008 \
     FLASK_DB_PATH=/var/lib/console/db.sqlite3 \
     FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache \
-    FLASK_SHANTY_BASE_URL=https://www.homeland-social.com/ \
-    CERT_DIR=/var/lib/certs \
-    SSH_HOST=ssh.homeland-social.com \
-    SSH_PORT=2222 \
-    SSH_USER= \
-    SSH_KEY_FILE=/var/lib/console/client.key
+    FLASK_SHANTY_BASE_URL=https://www.homeland-social.com/
 
 # Add the python application, be sure to exclude dotfiles.
 ADD ./back/api /app/api/
@@ -49,8 +42,6 @@ RUN pipenv install --system --skip-lock
 # RUN make && install mkp224o /usr/local/bin/mkp224o
 RUN addgroup -g ${DOCKER_GID} docker
 RUN adduser nobody docker
-RUN mkdir ${CERT_DIR}
-RUN chown -R nobody:nobody ${CERT_DIR}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 

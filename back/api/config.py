@@ -93,8 +93,6 @@ SHANTY_SERVER_METADATA_URL = urljoin(
 SESSION_TYPE = 'filesystem'
 SESSION_FILE_DIR = os.getenv('FLASK_SESSION_FILE_DIR', '/tmp/sessions')
 
-CERT_DIR = os.getenv('CERT_DIR', '/var/lib/certs/')
-
 EXTERNAL_HOST = urlparse(os.getenv('EXTERNAL_HOST', 'http://localhost:8080'))
 
 SSH_HOST = os.getenv('SSH_HOST', 'ssh.homeland-social.com')

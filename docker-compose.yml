@@ -44,16 +44,11 @@ services:
       - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
       - FLASK_SHANTY_OAUTH_CONFIG_URL=http://www.shanty.local:8000/api/oauth/config.json
       - FLASK_SHANTY_BASE_URL=http://slipos.io:8000/
-      - CERT_DIR=/var/lib/certs
-      - SSH_HOST=ssh.shanty.local
-      - SSH_PORT=2222
-      - SSH_KEY_FILE=/var/lib/console/client.key
-      - SSH_HOST_KEYS_FILE=/var/lib/console/authorized_keys
 
   console-front:
     image: console/front
     build:
-      dockerfile: ./docker/front/Dockerfile
+      dockerfile: ./docker/console/Dockerfile
       target: node
       context: ./
     depends_on:

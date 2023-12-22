@@ -1,10 +1,8 @@
 import sys
 import logging
 
-from uwsgi_chunked import Chunked
-
-from api import urls  # noqa: F401
-from api.app import app as _app  # noqa: F401
+from api import urls     # noqa: F401
+from api.app import app  # noqa: F401
 from api.models import create_tables
 from api.tasks import start_background_tasks
 
@@ -23,4 +21,3 @@ logging.basicConfig(
 
 create_tables()
 start_background_tasks()
-app = Chunked(_app)
