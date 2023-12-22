@@ -2,15 +2,15 @@ version: "3"
 
 secrets:
   lldap_jwt:
-    file: /data/compose/secrets/lldap_jwt
+    file: /data/containers/secrets/lldap_jwt
   lldap_pass:
-    file: /data/compose/secrets/lldap_pass
+    file: /data/containers/secrets/lldap_pass
   auth_jwt:
-    file: /data/compose/secrets/auth_jwt
+    file: /data/containers/secrets/auth_jwt
   auth_sess:
-    file: /data/compose/secrets/auth_sess
+    file: /data/containers/secrets/auth_sess
   auth_enc:
-    file: /data/compose/secrets/auth_enc
+    file: /data/containers/secrets/auth_enc
 
 services:
   yacht:

@@ -23,7 +23,7 @@ create_secret() {
 }
 
 create_secrets() {
-    grep file: ${COMPOSE_PATH} | awk ' { print $2 } ' | \
+    egrep '^\s+file:' ${COMPOSE_PATH} | awk ' { print $2 } ' | \
     while read path; do
         create_secret ${path}
     done
