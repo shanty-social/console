@@ -19,8 +19,8 @@
 </template>
 
 <script>
-import axios from 'axios'
-import { debounce}  from 'debounce'
+import api from '@/services/api'
+import debounce  from 'debounce'
 
 export default {
   name: 'SharedDomain',
@@ -71,7 +71,7 @@ export default {
   },
 
   mounted () {
-    axios
+    api
       .get('/api/oauth/shanty/domains/')
       .then((r) => {
         this.shared = r.data
@@ -110,7 +110,7 @@ export default {
         this.errors = []
         return
       }
-      axios
+      api
         .post(`/api/oauth/shanty/check_domain/`, { name: domain })
         .then(() => {
           this.errors = ['Is not available']

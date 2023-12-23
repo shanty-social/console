@@ -1,31 +1,25 @@
-import Vue from 'vue'
-import axios from 'axios'
-import VueTimeago from 'vue-timeago'
-import SocketIO from 'socket.io-client'
-import VueSocketIO from 'vue-socket.io'
-import App from './App.vue'
-import router from './router'
-import store from './store'
-import vuetify from './plugins/vuetify'
+import { createVuetify } from 'vuetify';
+import * as components from 'vuetify/components';
+import * as directives from 'vuetify/directives';
+import { createApp } from 'vue';
+import App from './App.vue';
+import store from '@/store';
+import router from '@/router';
 
-Vue.config.productionTip = false
-axios.defaults.withCredentials = true
-Vue.use(VueTimeago, {
-  name: 'Timeago',
-  locale: 'en'
-})
-Vue.use(new VueSocketIO({
-  debug: true,
-  connection: SocketIO('ws://localhost:8080/', { autoConnect: false, transports: ['websocket'] }),
-  vuex: {
-    store,
-    actionPrefix: 'socket_'
-  }
-}))
+import './style.css';
+import 'vuetify/styles';
+import '@mdi/font/css/materialdesignicons.css';
 
-new Vue({
-  router,
-  vuetify,
-  store,
-  render: h => h(App)
-}).$mount('#app')
+const vuetify = createVuetify({
+    components,
+    directives,
+    theme: {
+      defaultTheme: 'dark',
+    },
+});
+
+const app = createApp(App);
+app.use(vuetify);
+app.use(store);
+app.use(router);
+app.mount('#app');

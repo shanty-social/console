@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from '@/services/api'
 
 export default {
   namespaced: true,
@@ -26,7 +26,7 @@ export default {
   actions: {
     fetch({ commit }) {
       return new Promise((resolve, reject) => {
-        axios
+        api
         .get('/api/oauth/')
         .then((r) => {
           commit('set', r.data.objects)

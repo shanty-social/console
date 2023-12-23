@@ -11,8 +11,8 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
-import Login from '@/components/Login'
-import Register from '@/components/Register'
+import Login from '@/components/Login.vue'
+import Register from '@/components/Register.vue'
 
 export default {
   name: 'Authentication',

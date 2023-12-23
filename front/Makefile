@@ -1,16 +1,11 @@
-node_modules: package.json
-	npm i --dev
+deps:
+	npm install
 
+build:
+	npm run build
 
-.PHONY: deps
-deps: node_modules
+dev:
+	npm run dev
 
-
-.PHONY: test
-test: deps
-	npm run test
-
-
-.PHONY: lint
-lint: deps
-	npm run lint
+clean:
+	rm -rf node_modules/ dist/

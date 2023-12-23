@@ -43,8 +43,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import Endpoints from '@/components/Endpoints'
-import Hosts from '@/components/Hosts'
+import Endpoints from '@/components/Endpoints.vue'
+import Hosts from '@/components/Hosts.vue'
 
 export default {
   name: 'Settings',

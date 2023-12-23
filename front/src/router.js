@@ -1,12 +1,9 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import store from '@/store'
-import Settings from '@/views/Settings'
-import Endpoint from '@/views/Endpoint'
-import Home from '@/views/Home'
-import Authentication from '@/views/Authentication'
-
-Vue.use(Router)
+import Settings from '@/views/Settings.vue'
+import Endpoint from '@/views/Endpoint.vue'
+import Home from '@/views/Home.vue'
+import Authentication from '@/views/Authentication.vue'
 
 function requiresAuth (to, from, next) {
   store
@@ -26,7 +23,8 @@ function requiresAuth (to, from, next) {
     .catch(console.error)
 }
 
-export default new Router({
+const router = createRouter({
+  history: createWebHistory(),
   routes: [
     {
       path: '/authentication',
@@ -52,4 +50,6 @@ export default new Router({
       beforeEnter: requiresAuth
     }
   ]
-})
+});
+
+export default router;

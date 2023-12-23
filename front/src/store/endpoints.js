@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from '@/services/api'
 
 export default {
   namespaced: true,
@@ -35,7 +35,7 @@ export default {
   actions: {
     fetch ({ commit }) {
       return new Promise((resolve, reject) => {
-        axios
+        api
         .get('/api/endpoints/')
         .then((r) => {
           commit('set', r.data.objects)
@@ -50,7 +50,7 @@ export default {
 
     remove ({ commit, state }, id) {
       return new Promise((resolve, reject) => {
-        axios
+        api
         .delete(`/api/endpoints/${id}/`)
         .then(() => {
           const data = state.data.filter((o) => o.id !== id)
@@ -66,7 +66,7 @@ export default {
 
     save({ commit }, obj) {
       const { id } = obj
-      const method = (id) ? axios.put : axios.post
+      const method = (id) ? api.put : api.post
       let url = '/api/endpoints/'
       if (id) url += `${id}/`
 

@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import api from '@/services/api'
 import { mapActions, mapGetters } from 'vuex'
 
 export default {
@@ -149,7 +149,7 @@ export default {
       const data = {
         host: this.host.addresses[0]
       }
-      axios
+      api
         .post('/api/hosts/port_scan/', data, { params: {'only_open': 'true' }})
         .then((r) => {
           this.busy = false;

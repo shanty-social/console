@@ -47,7 +47,7 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
-import EndpointHost from '@/components/endpoint/Host'
+import EndpointHost from '@/components/endpoint/Host.vue'
 import SharedDomain from '@/components/endpoint/SharedDomain.vue'
 
 export default {

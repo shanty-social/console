@@ -1,16 +1,13 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-import Auth from './auth'
-import Endpoints from './endpoints'
-import Hosts from './hosts'
-import Socket from './socket'
-import Tasks from './tasks'
-import Messages from './messages'
-import OAuth from './oauth'
+import { createStore } from 'vuex'
+import Auth from '@/store/auth'
+import Endpoints from '@/store/endpoints'
+import Hosts from '@/store/hosts'
+import Socket from '@/store/socket'
+import Tasks from '@/store/tasks'
+import Messages from '@/store/messages'
+import OAuth from '@/store/oauth'
 
-Vue.use(Vuex)
-
-export default new Vuex.Store({
+const store = createStore({
   modules: {
     auth: Auth,
     endpoints: Endpoints,
@@ -20,4 +17,6 @@ export default new Vuex.Store({
     messages: Messages,
     oauth: OAuth,
   }
-})
+});
+
+export default store;

@@ -4,12 +4,6 @@ volumes:
   db:
   node-modules:
 
-networks:
-  shared:
-    external:
-      name: shared
-  private:
-
 services:
   console-back:
     image: console/back
@@ -17,9 +11,8 @@ services:
       dockerfile: ./docker/console/Dockerfile
       target: python
       context: ./
-    networks:
-      - private
-      - shared
+    ports:
+      - 8008:8008
     extra_hosts:
       - www.shanty.local:192.168.100.200
       - ssh.shanty.local:192.168.100.201
@@ -53,8 +46,6 @@ services:
       context: ./
     depends_on:
       - console-back
-    networks:
-      - private
     volumes:
       - ./front/public:/front/public:ro
       - ./front/src:/front/src:ro

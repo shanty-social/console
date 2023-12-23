@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from '@/services/api'
 
 export default {
   namespaced: true,
@@ -30,7 +30,7 @@ export default {
 
   actions: {
     fetch({ commit }) {
-      axios
+      api
         .get('/api/messages/')
         .then((r) => {
           commit('set', r.data.objects)
@@ -39,7 +39,7 @@ export default {
     },
 
     delete ({ commit }, id) {
-      axios
+      api
         .delete(`/api/messages/${id}/`)
         .then(() => {
           commit('del', id)
@@ -53,7 +53,7 @@ export default {
     },
 
     clear ({ commit }) {
-      axios
+      api
         .delete('/api/messages/')
         .then(() => {
           commit('set', [])

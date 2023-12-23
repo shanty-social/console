@@ -63,7 +63,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import api from '@/services/api'
 import { mapActions, mapGetters } from 'vuex'
 
 export default {
@@ -114,7 +114,7 @@ export default {
     }),
 
     fetchProviders () {
-      axios
+      api
         .get('/api/oauth/providers/')
         .then((r) => {
           this.providers = r.data.objects;

@@ -1,0 +1,14 @@
+{
+    "baseURL": "http://192.168.1.210:8008",
+    "wallpapers": [
+        "wallpapers/0.jpg",
+        "wallpapers/1.jpg"
+    ],
+    "themes": [
+        {
+            "name": "default",
+            "borderColor": "#1e50a9",
+            "backgroundColor": "#7e8eaa"
+        }
+    ]
+}

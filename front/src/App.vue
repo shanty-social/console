@@ -19,7 +19,7 @@
       <Messages/>
       <Tasks/>
       <Account/>
-    </v-app-bar>
+    </v-app-bar>api
 
     <v-main>
       <router-view/>
@@ -43,9 +43,9 @@
 </template>
 
 <script>
-import Account from '@/components/Account'
-import Tasks from '@/components/Tasks'
-import Messages from '@/components/Messages'
+import Account from '@/components/Account.vue'
+import Tasks from '@/components/Tasks.vue'
+import Messages from '@/components/Messages.vue'
 
 export default {
   name: 'App',
