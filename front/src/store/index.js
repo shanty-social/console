@@ -1,21 +1,23 @@
 import { createStore } from 'vuex'
-import Auth from '@/store/auth'
-import Endpoints from '@/store/endpoints'
-import Hosts from '@/store/hosts'
-import Socket from '@/store/socket'
-import Tasks from '@/store/tasks'
-import Messages from '@/store/messages'
-import OAuth from '@/store/oauth'
+import auth from '@/store/auth'
+import endpoints from '@/store/endpoints'
+import hosts from '@/store/hosts'
+import socket from '@/store/socket'
+import tasks from '@/store/tasks'
+import messages from '@/store/messages'
+import oauth from '@/store/oauth'
+import options from '@/store/options'
 
 const store = createStore({
   modules: {
-    auth: Auth,
-    endpoints: Endpoints,
-    hosts: Hosts,
-    socket: Socket,
-    tasks: Tasks,
-    messages: Messages,
-    oauth: OAuth,
+    auth,
+    endpoints,
+    hosts,
+    socket,
+    tasks,
+    messages,
+    oauth,
+    options,
   }
 });
 

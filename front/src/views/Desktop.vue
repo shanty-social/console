@@ -30,8 +30,8 @@
 </template>
 
 <script>
-import options from '../services/options.js';
-import Window from '../components/desktop/Window.vue.js';
+import { mapGetters } from 'vuex';
+import Window from '@/components/desktop/Window.vue.js';
 
 export default {
   name: "Desktop",
@@ -56,8 +56,14 @@ export default {
     };
   },
 
-  beforeCreate() {
-    document.body.style.backgroundImage = `url(${options.wallpaper})`;
+  mounted() {
+    document.body.style.backgroundImage = `url(${this.options.wallpaper})`;
+  },
+
+  computed: {
+    ...mapGetters({
+      options: 'options/options',
+    }),
   },
 
   methods: {

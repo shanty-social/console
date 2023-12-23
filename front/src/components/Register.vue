@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import api from '@/services/api'
+import api from '@/api'
 import { mapActions } from 'vuex'
 
 export default {

@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import options from '../services/options.js';
+import { mapGetters } from 'vuex';
 
 export default {
   name: "Window",
@@ -95,7 +95,6 @@ export default {
 
   data()  {
     return {
-      options,
       x: this.initialX,
       y: this.initialY,
       width: this.initialWidth,
@@ -111,6 +110,10 @@ export default {
   },
 
   computed: {
+    ...mapGetters({
+      options: 'options/options',
+    }),
+
     iframeCapturesEvents() {
       if (this.action.resizing || this.action.dragging) {
         return false;

@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import api from '@/services/api'
+import api from '@/api'
 import debounce  from 'debounce'
 
 export default {

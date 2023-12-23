@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from '@/api'
 
 export default {
   namespaced: true,
@@ -38,7 +38,7 @@ export default {
   actions: {
     whoami ({ state, commit }) {
       return new Promise((resolve) => {
-        axios
+        api
           .get('/api/users/whoami/')
           .then((r) => {
             commit('setWhoami', r.data)
@@ -52,7 +52,7 @@ export default {
     },
 
     login({ commit }, data) {
-      axios
+      api
         .post('/api/users/login/', data)
         .then((r) => {
           commit('setWhoami', r.data)
@@ -61,7 +61,7 @@ export default {
     },
 
     logout({ commit }) {
-      axios
+      api
         .post('/api/users/logout/')
         .then(() => {
           commit('setWhoami', null)
@@ -70,7 +70,7 @@ export default {
     },
 
     checkActivated({ commit }) {
-      axios
+      api
         .get('/api/users/activated/')
         .then((r) => {
           commit('setActivated', r.data)
