@@ -8,6 +8,7 @@ from flask_socketio import SocketIO, disconnect
 from flask_peewee.db import Database
 from flask_caching import Cache
 from flask_session import Session
+from flask_cors import CORS
 
 from api import config
 
@@ -76,3 +77,4 @@ for provider in config.OAUTH_PROVIDERS:
     oauth.register(
         name=provider['name'], client_kwargs={'scope': 'openid email profile'})
 Session(app)
+CORS(app)

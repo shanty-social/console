@@ -82,7 +82,7 @@ services:
     build:
       dockerfile: ./docker/conduit/Dockerfile
       context: ./
-    volume:
+    volumes:
       - ./docker/conduit/entrypoint.sh:/entrypoint.sh:ro
     environment:
       - SSH_HOST=conduit-proxy

@@ -21,6 +21,7 @@ gevent = "*"
 Werkzeug = "==2.2.2"
 python-socketio = "==5.7.2"
 paramiko = "*"
+flask-cors = "*"
 
 [dev-packages]
 flake8 = "*"
