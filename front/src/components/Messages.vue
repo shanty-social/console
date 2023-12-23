@@ -1,11 +1,10 @@
 <template>
   <div class="mr-2">
     <v-menu>
-      <template v-slot:activator="{ on, attrs }">
+      <template v-slot:activator="{ props }">
         <v-btn
           dark
-          v-bind="attrs"
-          v-on="on"
+          v-bind="props"
         >
           <v-badge
             color="deep-purple"
@@ -29,24 +28,22 @@
             :key="index"
           >
             <v-list-item-title>{{ item.subject }}</v-list-item-title>
-            <v-list-item-icon>
+            <template v-slot:prepend>
               <v-icon
                 class="text-right"
                 @click.stop.prevent="deleteMessage(item.id)"
               >mdi-delete</v-icon>
-            </v-list-item-icon>
+            </template>
           </v-list-item>
         </v-list>
         <v-divider></v-divider>
         <v-list>
           <v-list-item>
-            <v-list-item-content>
-              <v-btn
-                @click="clearMessages"
-              >
-                Clear all
-              </v-btn>
-            </v-list-item-content>
+            <v-btn
+              @click="clearMessages"
+            >
+              Clear all
+            </v-btn>
           </v-list-item>
         </v-list>
       </v-card>

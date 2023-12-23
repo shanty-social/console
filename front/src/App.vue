@@ -28,6 +28,7 @@
     <v-footer
       padless
       color="primary lighten-1"
+      vvariant="text"
     >
       <v-row
         no-gutters
