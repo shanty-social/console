@@ -51,7 +51,20 @@ def session_auth():
     return get_logged_in_user() is not None
 
 
-def requires_auth(auth_methods=[session_auth]):
+def token_auth():
+    "Check auth token in Authorization: header."
+    token = app.config['AUTH_TOKEN']
+    if not token:
+        return
+    authz = request.headers.get('authorization')
+    if not authz:
+        return
+    if authz.startswith('Bearer '):
+        authz = authz[7:]
+    return authz == token
+
+
+def requires_auth(auth_methods=[session_auth, token_auth]):
     """
     Decorator that requires one of our auth methods for a function based view.
     """

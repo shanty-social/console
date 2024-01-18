@@ -1,5 +1,14 @@
 #!/bin/sh -x
 
+SSH_HOST=conduit-proxy
+SSH_PORT=443
+SSH_KEY=/etc/ssh/keys/id_ecdsa
+SSH_FORWARD_HOST=conduit-reverse
+SSH_FORWARD_PORT=80
+CONSOLE_URL=http://console.local:8008
+CONSOLE_AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
+SHANTY_URL=http://www.shanty.local:8000
+
 while true; do
     CONSOLE_UUID=$(curl \
         -H "Authorization: Bearer ${CONSOLE_AUTH_TOKEN}" \

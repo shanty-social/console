@@ -40,8 +40,8 @@ fi
 
 mkdir -p ${FLASK_SESSION_FILE_DIR}
 mkdir -p $(dirname ${FLASK_DB_PATH})
-chown ${PUID}:${PGID} $(dirname ${FLASK_DB_PATH})
-chown ${PUID}:${PGID} ${FLASK_SESSION_FILE_DIR}
+chown -R ${PUID}:${PGID} $(dirname ${FLASK_DB_PATH})
+chown -R ${PUID}:${PGID} ${FLASK_SESSION_FILE_DIR}
 
 uwsgi --enable-threads --http=${FLASK_HOST}:${FLASK_PORT} \
       --uid=${PUID} --gid=${PGID} --cache2 name=default,items=${FLASK_CACHE_SIZE} \

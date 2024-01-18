@@ -4,83 +4,23 @@ volumes:
   db:
   node-modules:
 
+secrets:
+  auth-token:
+    file: /data/containers/secrets/auth_token
+
 services:
-  console-back:
-    image: console/back
-    build:
-      dockerfile: ./docker/console/Dockerfile
-      target: python
-      context: ./
+  console:
+    image: console/console
     ports:
-      - 8008:8008
-    extra_hosts:
-      - www.shanty.local:192.168.100.200
-      - ssh.shanty.local:192.168.100.201
+      - 8000:8000
+    secrets:
+      - auth-token
     volumes:
-      - ./back/api:/app/api
-      - ./docker/console/entrypoint.sh:/entrypoint.sh:ro
-      - ./docker/console/client.key:/var/lib/console/client.key:ro
-      - /var/run/docker.sock:/var/run/sockets/docker.sock
-#      - /tmp/wpa_sock:/var/run/sockets
-      - /tmp/certs:/var/lib/certs/
-      - db:/var/lib/console/
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - FLASK_WPA_SOCKET_PATH=/var/run/sockets/wpa_supplicant
-      - FLASK_NDS_SOCKET_PATH=/var/run/sockets/nds
-      - FLASK_DOCKER_SOCKET_PATH=/var/run/sockets/docker.sock
       - FLASK_LOG_LEVEL=DEBUG
       - FLASK_DEBUG=true
-      - FLASK_HOST=0.0.0.0
-      - FLASK_PORT=8008
-      - FLASK_DB_PATH=/var/lib/console/db.sqlite3
-      - FLASK_UUID_PATH=/var/lib/console/console.uuid
-      - FLASK_CACHE_TYPE=flask_caching.contrib.uwsgicache.UWSGICache
-      - FLASK_SHANTY_OAUTH_CONFIG_URL=http://www.shanty.local:8000/api/oauth/config.json
+      - FLASK_SHANTY_OAUTH_CONFIG_URL=http://slipos.io:8000/api/oauth/config.json
       - FLASK_SHANTY_BASE_URL=http://slipos.io:8000/
-
-  console-front:
-    image: console/front
-    build:
-      dockerfile: ./docker/console/Dockerfile
-      target: node
-      context: ./
-    depends_on:
-      - console-back
-    volumes:
-      - ./front/public:/front/public:ro
-      - ./front/src:/front/src:ro
-      - ./front/static:/front/static:ro
-      - ./front/babel.config.js:/front/babel.config.js:ro
-      - ./front/package.json:/front/package.json:ro
-      - ./front/package-lock.json:/front/package-lock.json:ro
-      - ./front/vue.config.js:/front/vue.config.js:ro
-    ports:
-      - 8080:8080
-    environment:
-      - FLASK_HOST=console-back
-      - FLASK_PORT=8008
-      - VUE_HOST=0.0.0.0
-      - VUE_PORT=8080
-
-  console-tor:
-    image: console/tor
-    build:
-      dockerfile: ./docker/tor/Dockerfile
-      context: ./
-
-  console-conduit:
-    image: console/conduit
-    build:
-      dockerfile: ./docker/conduit/Dockerfile
-      context: ./
-    volumes:
-      - ./docker/conduit/entrypoint.sh:/entrypoint.sh:ro
-    environment:
-      - SSH_HOST=conduit-proxy
-      - SSH_PORT=443
-      - SSH_KEY=/etc/ssh/keys/id_ecdsa
-      - SSH_FORWARD_HOST=conduit-reverse
-      - SSH_FORWARD_PORT=80
-      - CONSOLE_URL=http://console.local:8008
-      - CONSOLE_AUTH_TOKEN=abcdefghijklmnopqrstuvwxyz
-      - SHANTY_URL=http://www.shanty.local:8000
+      - AUTH_TOKEN_FILE=/run/secrets/auth_token
+      - FLASK_DOCKER_SOCKET_PATH=/var/run/docker.sock

@@ -7,7 +7,7 @@ from pkg_resources import parse_version
 from restless.utils import json, MoreTypesJSONEncoder
 from peewee import (
     CharField, DateTimeField, ForeignKeyField, DeferredForeignKey,
-    TextField, BooleanField, UUIDField, IntegerField,
+    TextField, BooleanField, UUIDField, IntegerField, IPField,
 )
 from flask_peewee.utils import make_password, check_password
 from playhouse.fields import PickleField
@@ -243,6 +243,38 @@ class Message(SignalMixin, db.Model):
         return Message.create(subject=subject, body=body)
 
 
+class Network(SignalMixin, db.Model):
+    "Network interfaces"
+    name = CharField(null=False, unique=True)
+    address = IPField(null=True)
+    netmask = IPField(null=True)
+    gateway = IPField(null=True)
+    dhcp = BooleanField(default=True)
+    ssid = CharField(null=True)
+    wpa = CharField(null=True)
+    type = CharField(null=False, default='eth',
+                     choices=[('eth', 'eth'), ('wifi', 'wifi'), ('ap', 'ap')])
+    enabled = BooleanField(default=True)
+    status = CharField(null=False, default='down',
+                       choices=[('up', 'up'), ('down', 'down')])
+    created = DateTimeField(default=datetime.now)
+
+
+class Service(SignalMixin, db.Model):
+    "Docker services"
+    id = UUIDField(primary_key=True, default=uuid4)
+    type = CharField(null=False, default='command',
+                     choices=[('command', 'command'), ('compose', 'compose')])
+    image = CharField(null=False)
+    tag = CharField(null=False)
+    definition = TextField(null=False)
+    admin_port = IntegerField(null=True)
+    service_port = IntegerField(null=True)
+    enabled = BooleanField(default=True)
+    started = DateTimeField(default=None, null=True)
+    created = DateTimeField(default=datetime.now)
+
+
 @post_save(sender=Task)
 def on_task_save(sender, instance, created):
     "Publish task events to socket.io."
@@ -265,3 +297,34 @@ def on_message_save(sender, instance, created):
     from api.views.messages import message_preparer
     socketio.emit('models.message.post_save',
                   message_preparer.prepare(instance), broadcast=True)
+
+@post_save
+def on_network_save(sender, instance, create):
+    "Publish network events to socket.io."
+    from api.views.network import network_preparer
+    socketio.emit('models.network.post_save',
+                  network_preparer.prepare(instance), boradcast=True)
+
+
+@post_delete
+def on_network_delete(sender, instance):
+    "Publish network events to socket.io."
+    from api.views.network import network_preparer
+    socketio.emit('models.network.post_delete',
+                  network_preparer.prepare(instance), boradcast=True)
+
+
+@post_save
+def on_container_save(sender, instance, create):
+    "Publish container events to socket.io."
+    from api.views.container import contianer_preparer
+    socketio.emit('models.contianer.post_save',
+                  container_preparer.prepare(instance), boradcast=True)
+
+
+@post_delete
+def on_container_delete(sender, instance):
+    "Publish container events to socket.io."
+    from api.views.container import container_preparer
+    socketio.emit('models.container.post_delete',
+                  container_preparer.prepare(instance), boradcast=True)

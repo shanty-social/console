@@ -3,14 +3,16 @@ DOCKER = docker
 DOCKER_COMPOSE = docker-compose -p console
 
 
-.PHONY: shared
-shared:
-	-${DOCKER} network create --subnet=192.168.100.0/24 --ip-range=192.168.100.0/25 --gateway=192.168.100.254 shared
-
-
 .PHONY: build
 build:
-	${DOCKER_COMPOSE} build --progress=plain
+	docker buildx build -t console/console --load -f docker/console/Dockerfile .
+	docker buildx build -t console/net --load -f docker/net/Dockerfile .
+	docker buildx build -t console/conduit --load -f docker/conduit/Dockerfile .
+
+
+.PHONY: run
+run:
+	${DOCKER_COMPOSE} up
 
 
 .PHONY: test
@@ -27,46 +29,3 @@ lint:
 
 .PHONY: ci
 ci: test lint
-
-
-.PHONY: migrate
-migrate:
-	${DOCKER_COMPOSE} run --rm console python3 manage.py migrate --noinput
-
-
-.PHONY: run
-run: shared
-	${DOCKER_COMPOSE} up --remove-orphans
-
-
-.PHONY: tarball
-tarball:
-	${DOCKER} build . -f docker/tarball/Dockerfile -t tarball
-	${DOCKER} run --privileged --rm \
-			  -e OUTPUT=/output/var-lib-docker.tgz \
-			  -v $(mktemp -d):/var/lib/docker \
-			  -v ${PWD}/output:/output tarball
-
-
-.PHONY: final
-final:
-	${DOCKER} build . -f docker/console/Dockerfile --target=final --no-cache -t console-back-final
-
-
-.PHONY: clean
-clean:
-	${DOCKER_COMPOSE} rm --force
-
-
-.PHONY: rebuild
-rebuild:
-ifdef SERVICE
-	${DOCKER_COMPOSE} stop ${SERVICE}
-	${DOCKER_COMPOSE} rm -f ${SERVICE}
-	${DOCKER_COMPOSE} build ${SERVICE}
-	${DOCKER_COMPOSE} create ${SERVICE}
-	${DOCKER_COMPOSE} start ${SERVICE}
-else
-	@echo "Please define SERVICE variable, ex:"
-	@echo "make rebuild SERVICE=foo"
-endif

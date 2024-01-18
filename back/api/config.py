@@ -15,10 +15,7 @@ def get_from_env_or_file(var_name, default=None):
 
 
 def get_uuid(var_name):
-    try:
-        path = os.environ[var_name]
-    except KeyError:
-        return str(uuid4())
+    path = os.getenv(var_name, '/var/lib/console/console.uuid')
     try:
         with open(path, 'r') as f:
             return f.read().strip()
@@ -34,10 +31,10 @@ TEST = 'pytest' in sys.argv
 
 DATABASE = {
     'engine': 'peewee.SqliteDatabase',
-    'name': os.getenv('FLASK_DB_PATH', '/var/lib/db.sqlite3'),
+    'name': os.getenv('FLASK_DB_PATH', '/var/lib/console/db.sqlite3'),
 }
 
-CACHE_TYPE = os.getenv('FLASK_CACHE_TYPE', 'SimpleCache') \
+CACHE_TYPE = os.getenv('FLASK_CACHE_TYPE', 'flask_caching.contrib.uwsgicache.UWSGICache') \
     if not TEST else 'SimpleCache'
 CACHE_UWSGI_NAME = 'default'
 
@@ -100,3 +97,4 @@ SSH_HOST_KEYS_FILE = os.getenv(
     'SSH_HOST_KEYS_FILE', '/var/lib/console/authorized_keys')
 
 CONSOLE_UUID = get_uuid('FLASK_UUID_PATH')
+AUTH_TOKEN = get_from_env_or_file('AUTH_TOKEN')

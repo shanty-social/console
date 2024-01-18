@@ -13,7 +13,6 @@ stopit = "*"
 peewee = "*"
 pycron = "*"
 restless = "*"
-docker = "*"
 uwsgi = "*"
 authlib = {git = "https://github.com/btimby/authlib.git", ref = "a4e27da295729c0dd74599191a7726600bfbdda2"}
 wtf-peewee = "*"
@@ -22,6 +21,7 @@ Werkzeug = "==2.2.2"
 python-socketio = "==5.7.2"
 paramiko = "*"
 flask-cors = "*"
+requests = "*"
 
 [dev-packages]
 flake8 = "*"

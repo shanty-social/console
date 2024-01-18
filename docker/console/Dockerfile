@@ -77,7 +77,8 @@ ENTRYPOINT [ "npm", "run", "serve" ]
 
 FROM ${ARCH}alpine:${ALPINE_VERSION} AS final
 
-RUN apk add --no-cache docker-cli docker-cli-compose openssl zlib libsodium libffi libexpat sqlite-libs
+RUN apk add --no-cache openssl zlib libsodium libffi libexpat \
+                       sqlite-libs docker-cli docker-cli-compose
 
 COPY --from=strip /app/api /app/api
 COPY --from=strip /usr/local/ /usr/local/
@@ -86,4 +87,5 @@ COPY --from=node /front/dist /app/assets
 ADD ./docker/console/docker-compose.yml /app
 
 WORKDIR /app
+
 ENTRYPOINT [ "/entrypoint.sh" ]
